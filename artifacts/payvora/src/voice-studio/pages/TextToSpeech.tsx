@@ -29,9 +29,9 @@ export default function TextToSpeech() {
   )
 
   return (
-    <div style={{ display: 'flex', gap: 20, padding: '20px 24px 40px' }}>
+    <div className="voice-studio-layout" style={{ display: 'flex', gap: 20, padding: '20px 24px 40px' }}>
       {/* ── Left column ─────────────────────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="voice-selection-column" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Text input */}
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>
@@ -89,16 +89,18 @@ export default function TextToSpeech() {
             <SearchBar placeholder="Search voices..." value={search} onChange={setSearch} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div className="voice-card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, width: '100%', alignItems: 'stretch' }}>
             {filtered.map(v => {
               const active = selectedVoice === v.id
               return (
                 <div
                   key={v.id}
                   onClick={() => setSelectedVoice(v.id)}
+                  className="voice-card"
                   style={{
                     position: 'relative', display: 'flex', flexDirection: 'column',
                     borderRadius: 16, padding: '18px 18px 16px',
+                    minWidth: 0, minHeight: 238, height: '100%',
                     border: active ? `2px solid ${C.accent}` : `1px solid #ECECF3`,
                     background: active ? C.accentLight : C.white,
                     cursor: 'pointer', transition: 'all 0.18s',
@@ -170,7 +172,7 @@ export default function TextToSpeech() {
       </div>
 
       {/* ── Right sidebar ────────────────────────────────────────────── */}
-      <div style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="voice-settings-column" style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>
           <h2 style={{ fontSize: 15, fontWeight: 600, color: C.black, margin: '0 0 20px' }}>Voice Settings</h2>
 

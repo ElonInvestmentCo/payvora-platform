@@ -147,17 +147,16 @@ export default function App() {
       <aside className="payvora-sidebar" data-collapsed={sidebarCollapsed} style={{ width: sidebarCollapsed ? 64 : 248, flexShrink: 0, background: C.sidebar, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'relative', transition: 'width 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
 
         {/* Logo row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: '16px 16px 12px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, background: C.brand, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1L13 4.5V9.5L7 13L1 9.5V4.5L7 1Z" fill="white" fillOpacity="0.85"/>
-                <path d="M7 4L10 5.8V8.8L7 10.5L4 8.8V5.8L7 4Z" fill="white"/>
+            <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="Payvora logo mark">
+                <path d="M5 22V6h8.2c5.2 0 8.8 2.7 8.8 7s-3.6 7-8.8 7H10v2H5Zm5-6h3.1c2.5 0 3.9-1 3.9-3s-1.4-3-3.9-3H10v6Z" fill={C.brand}/>
               </svg>
             </div>
             <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em', opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>Payvora AI</span>
           </div>
-          <button type="button" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed(value => !value)} style={{ ...ghostBtn, flexShrink: 0 }}>
+          <button type="button" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed(value => !value)} style={{ ...ghostBtn, flexShrink: 0, position: sidebarCollapsed ? 'absolute' : 'static', right: sidebarCollapsed ? 8 : undefined, top: sidebarCollapsed ? 14 : undefined }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d={sidebarCollapsed ? 'M5 2L10 7L5 12' : 'M9 2L4 7L9 12'} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
               {!sidebarCollapsed && <path d="M13 2L8 7L13 12" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>}
@@ -178,8 +177,8 @@ export default function App() {
 
         {/* Search */}
         <div style={{ padding: sidebarCollapsed ? '0 8px 12px' : '0 12px 12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.3"/><path d="M8.5 8.5L10.5 10.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.3" strokeLinecap="round"/></svg>
+          <div title={sidebarCollapsed ? 'Search' : undefined} style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4"/><path d="M12.5 12.5L16 16" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round"/></svg>
             <input aria-label="Search chats" type="search" placeholder={sidebarCollapsed ? '' : 'Search chats'} style={{ opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 12, transition: 'opacity 180ms ease, width 220ms ease' }} />
           </div>
         </div>
@@ -188,7 +187,7 @@ export default function App() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
 
           {/* Chats */}
-          <SideSection label="Chats" expanded={expandedSections.Chats} onToggle={() => toggleSection('Chats')} collapsed={sidebarCollapsed}>
+          {!sidebarCollapsed && <SideSection label="Chats" expanded={expandedSections.Chats} onToggle={() => toggleSection('Chats')} collapsed={sidebarCollapsed}>
             {Object.entries(CHAT_HISTORY).map(([group, items]) => (
               <div key={group}>
                 <p style={{ ...groupLabel, opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>{group}</p>
@@ -198,21 +197,21 @@ export default function App() {
               </div>
             ))}
             <button type="button" onClick={() => notify('Showing all chats')} style={{ ...viewAllBtn, opacity: sidebarCollapsed ? 0 : 1, pointerEvents: sidebarCollapsed ? 'none' : 'auto', transition: 'opacity 180ms ease' }}>View all chats →</button>
-          </SideSection>
+          </SideSection>}
 
           {/* AI Workspace */}
-          <SideSection label="AI Workspace" expanded={expandedSections['AI Workspace']} onToggle={() => toggleSection('AI Workspace')} collapsed={sidebarCollapsed}>
-            {WORKSPACE_ITEMS.map(({ Icon, label }) => (
+          <SideSection label="AI Workspace" expanded={sidebarCollapsed || expandedSections['AI Workspace']} onToggle={() => toggleSection('AI Workspace')} collapsed={sidebarCollapsed}>
+            {WORKSPACE_ITEMS.filter(({ label }) => !sidebarCollapsed || ['AI Chat', 'Voice Studio', 'Image Studio', 'Video Studio'].includes(label)).map(({ Icon, label }) => (
               <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
             ))}
           </SideSection>
 
           {/* Explore */}
-          <SideSection label="Explore" expanded={expandedSections.Explore} onToggle={() => toggleSection('Explore')} collapsed={sidebarCollapsed}>
+          {!sidebarCollapsed && <SideSection label="Explore" expanded={expandedSections.Explore} onToggle={() => toggleSection('Explore')} collapsed={sidebarCollapsed}>
             {EXPLORE_ITEMS.map(({ Icon, label }) => (
               <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
             ))}
-          </SideSection>
+          </SideSection>}
 
         </div>
 
@@ -280,7 +279,7 @@ export default function App() {
             <>
 
           {/* Greeting */}
-          <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 24 }}>
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#000', letterSpacing: '-0.02em' }}>Good afternoon, Ademola 👋</h1>
             <p style={{ margin: '6px 0 0', fontSize: 14, color: 'rgba(0,0,0,0.45)' }}>What would you like to create today?</p>
           </div>
@@ -458,12 +457,12 @@ function Avatar({ initials, size = 32 }: { initials: string; size?: number }) {
 function SideSection({ label, children, expanded, onToggle, collapsed }: { label: string; children: React.ReactNode; expanded: boolean; onToggle: () => void; collapsed: boolean }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <button type="button" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${label}`} title={collapsed ? label : undefined} onClick={onToggle} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', padding: '2px 8px 6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', textAlign: collapsed ? 'center' : 'left' }}>
-        <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>{label}</span>
+      {!collapsed && <button type="button" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${label}`} onClick={onToggle} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 8px 6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', textAlign: 'left' }}>
+        <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 200ms ease' }}>
           <path d="M3 4.5L6 7.5L9 4.5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
-      </button>
+      </button>}
       <div aria-hidden={!expanded} style={{ maxHeight: expanded ? 1000 : 0, opacity: expanded ? 1 : 0, overflow: 'hidden', transition: 'max-height 220ms ease, opacity 180ms ease' }}>
         {children}
       </div>
@@ -482,10 +481,13 @@ function SideItem({ label, icon, active, onClick, collapsed }: { label: string; 
       onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: '7px 10px', borderRadius: 10, border: 'none', background: bg, color: active ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: active ? 500 : 400, cursor: 'pointer', textAlign: 'left', transition: 'background 180ms ease, color 180ms ease, transform 180ms ease' }}
+      className="payvora-side-item"
+      data-tooltip={collapsed ? label : undefined}
+      style={{ width: '100%', minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: collapsed ? 0 : '7px 10px', borderRadius: 10, border: 'none', background: bg, color: active ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: active ? 500 : 400, cursor: 'pointer', textAlign: 'left', transition: 'background 180ms ease, color 180ms ease, transform 180ms ease' }}
     >
-      {icon && <span style={{ opacity: active ? 1 : 0.75, display: 'flex' }}>{icon}</span>}
+      {icon && <span className="payvora-side-icon" style={{ width: 22, height: 22, opacity: active ? 1 : 0.75, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>}
       <span style={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>{label}</span>
+      {collapsed && <span className="payvora-sidebar-tooltip" role="tooltip">{label}</span>}
     </button>
   )
 }
