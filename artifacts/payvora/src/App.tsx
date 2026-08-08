@@ -103,6 +103,8 @@ export default function App() {
   const modelMenuRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
   const isStudio = ['Image Studio', 'Video Studio', 'Voice Studio'].includes(activeNav)
+  // Image/Video use a fixed-height split-pane layout; Voice Studio uses natural document flow
+  const isFixedStudio = ['Image Studio', 'Video Studio'].includes(activeNav)
 
   useEffect(() => {
     window.localStorage.setItem('payvora-expanded-sections', JSON.stringify(expandedSections))
@@ -301,7 +303,7 @@ export default function App() {
         </header>
 
         {/* Scrollable body */}
-        <div className={isStudio ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'} style={{ flex: 1, overflowY: 'auto', padding: isStudio ? 0 : '32px 32px 0' }}>
+        <div className={isFixedStudio ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'} style={{ flex: 1, overflowY: 'auto', padding: isStudio ? 0 : '32px 32px 0' }}>
           {activeNav === 'Voice Studio' ? (
             <div className="voice-studio-page">
               <VoiceStudioApp />

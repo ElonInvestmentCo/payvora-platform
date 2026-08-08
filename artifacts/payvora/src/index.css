@@ -220,6 +220,121 @@ button:disabled {
 
 /* ≥ 961px: all five cards in a row (default inline style) */
 
+/* ── Voice Studio app shell ──────────────────────────────────────────────── */
+.vs-app {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tabs bar: allow horizontal scroll on small screens so no tab is clipped */
+.vs-tabs-bar {
+  overflow-x: auto;
+  scrollbar-width: none;   /* Firefox */
+  -ms-overflow-style: none;
+}
+.vs-tabs-bar::-webkit-scrollbar { display: none; }
+
+/* ── Two-column layout shared across Voice Studio pages ─────────────────── */
+.vs-two-col {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ── Right-hand side panels (VoiceClone 300px, MyVoices 240px) ──────────── */
+.vs-layout-side,
+.hist-details-panel {
+  flex-shrink: 0;
+}
+
+/* Header action buttons row */
+.vs-page-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── VoiceClone voice grid (default 4 col) ──────────────────────────────── */
+.vc-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── MyVoices voice grid (default 4 col) ────────────────────────────────── */
+.mv-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Category bar: allow horizontal scroll instead of wrapping */
+.mv-category-bar {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mv-category-bar::-webkit-scrollbar { display: none; }
+
+/* ── History stats grid (default 5 col) ─────────────────────────────────── */
+.hist-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── Responsive — collapse at ≤ 1024px ──────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hist-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Responsive — collapse at ≤ 900px ───────────────────────────────────── */
+@media (max-width: 900px) {
+  /* Stack two-col layouts */
+  .vs-two-col {
+    flex-direction: column;
+  }
+
+  /* Side panels become full-width */
+  .vs-layout-side,
+  .hist-details-panel {
+    width: 100% !important;
+  }
+
+  /* Drop voice grids to 3 columns */
+  .vc-voice-grid,
+  .mv-voice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Voice Studio two-col layout (TextToSpeech) */
+  .voice-studio-page .voice-studio-layout {
+    flex-wrap: wrap !important;
+  }
+  .voice-studio-page .voice-settings-column {
+    width: 100% !important;
+  }
+}
+
+/* ── Responsive — collapse at ≤ 640px ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .vc-voice-grid,
+  .mv-voice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hist-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hist-search-row {
+    flex-wrap: wrap;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

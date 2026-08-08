@@ -152,7 +152,7 @@ export default function History() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 28 }}>
+      <div className="hist-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 28 }}>
         {statCards.map(s => (
           <div key={s.label} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -166,7 +166,7 @@ export default function History() {
       </div>
 
       {/* Search + filters */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center' }}>
+      <div className="hist-search-row" style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchBar placeholder="Search history by title, voice, or tag..." value={search} onChange={setSearch} />
         <div style={{ display: 'flex', gap: 6 }}>
           {['All', 'Completed', 'Processing', 'Failed'].map(f => (
@@ -182,7 +182,7 @@ export default function History() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div className="vs-two-col" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
         {/* ── Timeline ────────────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <TimelineSection title="Today"          items={filterItems(todayItems)}     selectedId={selected} onSelect={id => setSelected(id === selected ? null : id)} />
@@ -191,9 +191,9 @@ export default function History() {
         </div>
 
         {/* ── Details panel ────────────────────────────────────────────── */}
-        <div style={{ width: 300, flexShrink: 0 }}>
+        <div className="hist-details-panel" style={{ width: 300, flexShrink: 0 }}>
           {selectedItem ? (
-            <Card style={{ position: 'sticky', top: 20 }}>
+            <Card>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <img src={selectedItem.voiceImg} alt={selectedItem.voice} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
                 <div>
@@ -257,7 +257,7 @@ export default function History() {
               </div>
             </Card>
           ) : (
-            <Card style={{ textAlign: 'center', padding: '40px 20px', position: 'sticky', top: 20 }}>
+            <Card style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ width: 48, height: 48, borderRadius: 14, background: C.borderLight, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.textGray} strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
               </div>

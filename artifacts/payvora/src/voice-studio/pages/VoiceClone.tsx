@@ -116,7 +116,7 @@ export default function VoiceClone() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: C.black, margin: 0, lineHeight: 1.3 }}>Voice Clone</h1>
           <p style={{ fontSize: 14, color: C.textGray, margin: '4px 0 0' }}>Create realistic AI voice clones from recordings in minutes.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="vs-page-header-actions" style={{ display: 'flex', gap: 10 }}>
           {[
             { label: 'Upload Files', primary: false },
             { label: 'Import Audio', primary: false },
@@ -133,7 +133,7 @@ export default function VoiceClone() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div className="vs-two-col" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
         {/* ── Left: voice library ──────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Search + filters */}
@@ -154,7 +154,7 @@ export default function VoiceClone() {
           </div>
 
           {/* Voice grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+          <div className="vc-voice-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             {/* Create New card */}
             <div
               style={{ borderRadius: 16, border: `1.5px dashed ${C.border}`, background: C.white, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', minHeight: 200, transition: 'all 0.15s', textAlign: 'center' }}
@@ -271,7 +271,7 @@ export default function VoiceClone() {
         </div>
 
         {/* ── Right: details panel ──────────────────────────────────────── */}
-        <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="vs-layout-side" style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {selectedVoice ? (
             <>
               {/* Voice details */}

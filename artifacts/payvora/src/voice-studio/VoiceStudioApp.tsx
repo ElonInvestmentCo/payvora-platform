@@ -17,9 +17,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('text-to-speech')
 
   return (
-    <div style={{ minHeight: '100vh', background: C.white, fontFamily: 'Inter, system-ui, sans-serif', color: C.black }}>
+    <div className="vs-app" style={{ background: C.white, fontFamily: 'Inter, system-ui, sans-serif', color: C.black }}>
       {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div style={{ padding: '20px 24px 0' }}>
+      <div className="vs-header" style={{ padding: '20px 24px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <WaveformIcon size={22} color={C.white} />
@@ -31,7 +31,7 @@ export default function App() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 24, marginTop: 20, borderBottom: `1px solid ${C.border}` }}>
+        <div className="vs-tabs-bar" style={{ display: 'flex', gap: 24, marginTop: 20, borderBottom: `1px solid ${C.border}` }}>
           {TABS.map(tab => (
             <button
               key={tab.id}

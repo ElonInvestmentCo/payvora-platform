@@ -130,13 +130,13 @@ export default function MyVoices() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div className="vs-two-col" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
         {/* ── Main content ─────────────────────────────────────────────── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Search + category filters */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <SearchBar placeholder="Search voices..." value={search} onChange={setSearch} />
-            <div style={{ display: 'flex', gap: 2, background: C.borderLight, borderRadius: 12, padding: 4, flexShrink: 0, flexWrap: 'wrap' }}>
+            <div className="mv-category-bar" style={{ display: 'flex', gap: 2, background: C.borderLight, borderRadius: 12, padding: 4, flexShrink: 0 }}>
               {CATEGORIES.map(cat => (
                 <button key={cat}
                   onClick={() => setCategory(cat)}
@@ -154,7 +154,7 @@ export default function MyVoices() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.black }}>Favorites</span>
                 <span style={{ fontSize: 12, color: C.textGray }}>({favorites.length})</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+              <div className="mv-voice-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
                 {favorites.map(v => <VoiceCard key={v.id} v={v} onUse={() => {}} />)}
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function MyVoices() {
               <span style={{ fontSize: 12, color: C.textGray }}>({displayed.length})</span>
             </div>
             {displayed.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+              <div className="mv-voice-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
                 {displayed.map(v => <VoiceCard key={v.id} v={v} onUse={() => {}} />)}
               </div>
             ) : (
@@ -204,7 +204,7 @@ export default function MyVoices() {
         </div>
 
         {/* ── Right stats sidebar ──────────────────────────────────────── */}
-        <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="vs-layout-side" style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card>
             <h3 style={{ fontSize: 14, fontWeight: 600, color: C.black, margin: '0 0 16px' }}>Voice Statistics</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
