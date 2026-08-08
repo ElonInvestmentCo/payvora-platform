@@ -216,7 +216,7 @@ router.patch("/history/:id", async (req, res) => {
   if (Object.keys(patch).length === 0) return void res.status(422).json({ message: "Nothing to update." });
   try {
     await storage.getGenerationRecord(ownerId, req.params.id);
-    await storage.updateGenerationRecord(req.params.id, patch);
+    await storage.updateGenerationRecord(req.params.id, patch, ownerId);
     res.json(generationJson(await storage.getGenerationRecord(ownerId, req.params.id)));
   } catch {
     res.status(404).json({ message: "History item not found." });

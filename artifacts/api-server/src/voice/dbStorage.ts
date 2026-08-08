@@ -122,8 +122,9 @@ export class DbVoiceStorage implements VoiceStorage {
     return row;
   }
 
-  async updateGenerationRecord(id: string, patch: Partial<Pick<Generation, "status" | "progress" | "audioPath" | "durationSeconds" | "error" | "completedAt" | "title" | "favorite">>): Promise<void> {
-    await db.update(generationsTable).set(patch).where(eq(generationsTable.id, id));
+  async updateGenerationRecord(id: string, patch: Partial<Pick<Generation, "status" | "progress" | "audioPath" | "durationSeconds" | "error" | "completedAt" | "title" | "favorite">>, ownerId?: string): Promise<void> {
+    const where = ownerId ? and(eq(generationsTable.id, id), eq(generationsTable.ownerId, ownerId)) : eq(generationsTable.id, id);
+    await db.update(generationsTable).set(patch).where(where);
   }
 
   async getGenerationRecord(ownerId: string, id: string): Promise<Generation> {

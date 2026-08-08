@@ -153,13 +153,23 @@ export default function TextToSpeech({ onNavigate }: { onNavigate?: (tab: string
 
   const insertAtCursor = (snippet: string) => {
     const el = textareaRef.current
-    if (!el) { setText(t => t + snippet); return }
+    if (!el) { setText(t => (t + snippet).length > 5000 ? t : t + snippet); return }
     const start = el.selectionStart ?? text.length
     const end = el.selectionEnd ?? text.length
-    const next = text.slice(0, start) + snippet + text.slice(end)
-    if (next.length > 5000) { setNotice({ kind: 'error', text: 'Adding that would exceed the 5,000 character limit.' }); return }
-    setText(next)
-    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start + snippet.length, start + snippet.length) })
+    if (text.length - (end - start) + snippet.length > 5000) { setNotice({ kind: 'error', text: 'Adding that would exceed the 5,000 character limit.' }); return }
+    el.focus()
+    el.setSelectionRange(start, end)
+    // Prefer execCommand so the browser's native undo/redo stack records the insertion.
+    let inserted = false
+    try { inserted = document.execCommand('insertText', false, snippet) } catch { inserted = false }
+    if (inserted) {
+      // Sync React state from the DOM value execCommand produced.
+      setText(el.value)
+    } else {
+      const next = text.slice(0, start) + snippet + text.slice(end)
+      setText(next)
+      requestAnimationFrame(() => { el.focus(); el.setSelectionRange(start + snippet.length, start + snippet.length) })
+    }
   }
 
   // ── Preview playback ─────────────────────────────────────────────────────

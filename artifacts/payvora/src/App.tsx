@@ -40,7 +40,7 @@ const WORKSPACE_ITEMS = [
   { Icon: MicIcon,   label: 'Voice Studio' },
   { Icon: ImgIcon,   label: 'Image Studio' },
   { Icon: VidIcon,   label: 'Video Studio' },
-  { Icon: FileIcon,  label: 'Document Studio' },
+  { Icon: FileIcon,  label: 'Document Studio', unavailable: 'Document Studio is not available in this version.' },
 ]
 
 const EXPLORE_ITEMS = [
@@ -49,7 +49,7 @@ const EXPLORE_ITEMS = [
   { Icon: BookIcon,   label: 'Knowledge Base' },
   { Icon: FolderIcon, label: 'Projects' },
   { Icon: PlugIcon,   label: 'Integrations' },
-]
+].map(item => ({ ...item, unavailable: `${item.label} is not available in this version.` }))
 
 const STUDIO_CARDS = [
   { bg: '#f3e8ff', fg: '#9333ea', Icon: ChatBubbleIcon, title: 'AI Chat',      sub: 'Have intelligent conversations' },
@@ -84,7 +84,10 @@ export default function App() {
   const [activeNav, setActiveNav] = useState(() => navForPath(window.location.pathname))
   const [message, setMessage] = useState('')
   const [activeChat, setActiveChat] = useState('New conversation')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches)
+  const [collapsedUIPref, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [chatSearch, setChatSearch] = useState('')
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [modelOpen, setModelOpen] = useState(false)
@@ -105,6 +108,7 @@ export default function App() {
   const isStudio = ['Image Studio', 'Video Studio', 'Voice Studio'].includes(activeNav)
   // Image/Video use a fixed-height split-pane layout; Voice Studio uses natural document flow
   const isFixedStudio = ['Image Studio', 'Video Studio'].includes(activeNav)
+  const collapsedUI = !isMobile && collapsedUIPref
 
   useEffect(() => {
     window.localStorage.setItem('payvora-expanded-sections', JSON.stringify(expandedSections))
@@ -113,11 +117,20 @@ export default function App() {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 760px)')
     const syncSidebar = () => {
+      setIsMobile(mediaQuery.matches)
       if (mediaQuery.matches) setSidebarCollapsed(true)
+      else setMobileNavOpen(false)
     }
     mediaQuery.addEventListener('change', syncSidebar)
     return () => mediaQuery.removeEventListener('change', syncSidebar)
   }, [])
+
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const closeWithEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setMobileNavOpen(false) }
+    document.addEventListener('keydown', closeWithEscape)
+    return () => document.removeEventListener('keydown', closeWithEscape)
+  }, [mobileNavOpen])
 
   useEffect(() => {
     const syncRoute = () => setActiveNav(navForPath(window.location.pathname))
@@ -151,6 +164,7 @@ export default function App() {
   const notify = (label: string) => setInteractionMessage(label)
   const navigateTo = (label: string, announce = true) => {
     setActiveNav(label)
+    setMobileNavOpen(false)
     const path = NAV_PATHS[label]
     if (path && window.location.pathname !== path) {
       window.history.pushState({}, '', path)
@@ -177,42 +191,49 @@ export default function App() {
     <div className="payvora-app" style={{ display: 'flex', background: C.page, fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }} aria-live="polite">
 
       {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
-      <aside className="payvora-sidebar" data-collapsed={sidebarCollapsed} style={{ width: sidebarCollapsed ? 64 : 248, flexShrink: 0, background: C.sidebar, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'relative', transition: 'width 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
+      {isMobile && mobileNavOpen && (
+        <div aria-hidden onClick={() => setMobileNavOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 29, background: 'rgba(0,0,0,0.45)' }} />
+      )}
+      <aside className="payvora-sidebar" data-collapsed={isMobile ? false : collapsedUI} data-mobile-open={isMobile && mobileNavOpen}
+        aria-hidden={isMobile && !mobileNavOpen}
+        style={isMobile
+          ? { width: 272, maxWidth: '85vw', flexShrink: 0, background: C.sidebar, display: 'flex', flexDirection: 'column', height: '100dvh', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'fixed', left: 0, top: 0, zIndex: 30, transform: mobileNavOpen ? 'translateX(0)' : 'translateX(-105%)', transition: 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1)', paddingBottom: 'env(safe-area-inset-bottom)' }
+          : { width: collapsedUI ? 64 : 248, flexShrink: 0, background: C.sidebar, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'relative', transition: 'width 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}>
 
         {/* Logo row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: '16px 16px 12px', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsedUI ? 'center' : 'space-between', padding: '16px 16px 12px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="Payvora logo mark">
                 <path d="M5 22V6h8.2c5.2 0 8.8 2.7 8.8 7s-3.6 7-8.8 7H10v2H5Zm5-6h3.1c2.5 0 3.9-1 3.9-3s-1.4-3-3.9-3H10v6Z" fill={C.brand}/>
               </svg>
             </div>
-            <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em', opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>Payvora AI</span>
+            <span style={{ color: '#fff', fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em', opacity: collapsedUI ? 0 : 1, width: collapsedUI ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>Payvora AI</span>
           </div>
-          <button type="button" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed(value => !value)} style={{ ...ghostBtn, flexShrink: 0, position: sidebarCollapsed ? 'absolute' : 'static', right: sidebarCollapsed ? 8 : undefined, top: sidebarCollapsed ? 14 : undefined }}>
+          <button type="button" aria-label={collapsedUI ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsedUI ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setSidebarCollapsed(value => !value)} style={{ ...ghostBtn, flexShrink: 0, position: collapsedUI ? 'absolute' : 'static', right: collapsedUI ? 8 : undefined, top: collapsedUI ? 14 : undefined }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d={sidebarCollapsed ? 'M5 2L10 7L5 12' : 'M9 2L4 7L9 12'} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-              {!sidebarCollapsed && <path d="M13 2L8 7L13 12" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>}
+              <path d={collapsedUI ? 'M5 2L10 7L5 12' : 'M9 2L4 7L9 12'} stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+              {!collapsedUI && <path d="M13 2L8 7L13 12" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>}
             </svg>
           </button>
         </div>
 
         {/* New Chat */}
-        <div style={{ padding: sidebarCollapsed ? '0 8px 8px' : '0 12px 8px' }}>
-          <button type="button" aria-label="New chat" className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'New Chat' : undefined} onClick={startNewChat} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: '9px 12px', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}>
+        <div style={{ padding: collapsedUI ? '0 8px 8px' : '0 12px 8px' }}>
+          <button type="button" aria-label="New chat" className={collapsedUI ? 'payvora-collapsed-utility' : undefined} data-tooltip={collapsedUI ? 'New Chat' : undefined} onClick={startNewChat} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: collapsedUI ? 'center' : 'space-between', padding: '9px 12px', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v10M1.5 6.5h10" stroke="white" strokeWidth="1.6" strokeLinecap="round"/></svg>
-              <span style={{ opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>New Chat</span>
+              <span style={{ opacity: collapsedUI ? 0 : 1, width: collapsedUI ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>New Chat</span>
             </div>
-            {!sidebarCollapsed && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.1)', padding: '2px 5px', borderRadius: 5 }}>⌘K</span>}
+            {!collapsedUI && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.1)', padding: '2px 5px', borderRadius: 5 }}>⌘K</span>}
           </button>
         </div>
 
         {/* Search */}
-        <div style={{ padding: sidebarCollapsed ? '0 8px 12px' : '0 12px 12px' }}>
-          <div className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'Search' : undefined} style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ padding: collapsedUI ? '0 8px 12px' : '0 12px 12px' }}>
+          <div className={collapsedUI ? 'payvora-collapsed-utility' : undefined} data-tooltip={collapsedUI ? 'Search' : undefined} style={{ display: 'flex', alignItems: 'center', justifyContent: collapsedUI ? 'center' : 'flex-start', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4"/><path d="M12.5 12.5L16 16" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            <input aria-label="Search chats" type="search" placeholder={sidebarCollapsed ? '' : 'Search chats'} style={{ opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 12, transition: 'opacity 180ms ease, width 220ms ease' }} />
+            <input aria-label="Search chats" type="search" value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder={collapsedUI ? '' : 'Search chats'} style={{ opacity: collapsedUI ? 0 : 1, width: collapsedUI ? 0 : '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.75)', fontSize: 12, transition: 'opacity 180ms ease, width 220ms ease' }} />
           </div>
         </div>
 
@@ -220,29 +241,36 @@ export default function App() {
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 8px' }}>
 
           {/* Chats */}
-          {!sidebarCollapsed && <SideSection label="Chats" expanded={expandedSections.Chats} onToggle={() => toggleSection('Chats')} collapsed={sidebarCollapsed}>
-            {Object.entries(CHAT_HISTORY).map(([group, items]) => (
+          {!collapsedUI && <SideSection label="Chats" expanded={expandedSections.Chats} onToggle={() => toggleSection('Chats')} collapsed={collapsedUI}>
+            {Object.entries(CHAT_HISTORY).map(([group, items]) => {
+              const visible = items.filter(item => item.toLowerCase().includes(chatSearch.trim().toLowerCase()))
+              if (visible.length === 0) return null
+              return (
               <div key={group}>
-                <p style={{ ...groupLabel, opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>{group}</p>
-                {items.map((item, i) => (
-                  <SideItem key={item} label={item} icon={<ChatIcon />} collapsed={sidebarCollapsed} active={activeChat === item} onClick={() => { setActiveChat(item); navigateTo('AI Chat', false); notify(`${item} opened`) }} />
+                <p style={{ ...groupLabel, opacity: collapsedUI ? 0 : 1, transition: 'opacity 180ms ease' }}>{group}</p>
+                {visible.map(item => (
+                  <SideItem key={item} label={item} icon={<ChatIcon />} collapsed={collapsedUI} active={activeChat === item} onClick={() => { setActiveChat(item); navigateTo('AI Chat', false); notify(`${item} opened`) }} />
                 ))}
               </div>
-            ))}
-            <button type="button" onClick={() => notify('Showing all chats')} style={{ ...viewAllBtn, opacity: sidebarCollapsed ? 0 : 1, pointerEvents: sidebarCollapsed ? 'none' : 'auto', transition: 'opacity 180ms ease' }}>View all chats →</button>
+              )
+            })}
+            {chatSearch.trim() && Object.values(CHAT_HISTORY).flat().every(item => !item.toLowerCase().includes(chatSearch.trim().toLowerCase())) && (
+              <p style={{ ...groupLabel, textTransform: 'none', letterSpacing: 0, fontSize: 11 }}>No chats match “{chatSearch.trim()}”.</p>
+            )}
+            <button type="button" disabled title="Chat archive is not available yet — conversations are not persisted." style={{ ...viewAllBtn, opacity: collapsedUI ? 0 : 0.5, cursor: 'not-allowed', pointerEvents: collapsedUI ? 'none' : 'auto', transition: 'opacity 180ms ease' }}>View all chats →</button>
           </SideSection>}
 
           {/* AI Workspace */}
-          <SideSection label="AI Workspace" expanded={sidebarCollapsed || expandedSections['AI Workspace']} onToggle={() => toggleSection('AI Workspace')} collapsed={sidebarCollapsed}>
-            {WORKSPACE_ITEMS.filter(({ label }) => !sidebarCollapsed || ['AI Chat', 'Voice Studio', 'Image Studio', 'Video Studio'].includes(label)).map(({ Icon, label }) => (
-              <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => navigateTo(label)} />
+          <SideSection label="AI Workspace" expanded={collapsedUI || expandedSections['AI Workspace']} onToggle={() => toggleSection('AI Workspace')} collapsed={collapsedUI}>
+            {WORKSPACE_ITEMS.filter(({ label }) => !collapsedUI || ['AI Chat', 'Voice Studio', 'Image Studio', 'Video Studio'].includes(label)).map(({ Icon, label }) => (
+              <SideItem key={label} label={label} icon={<Icon />} collapsed={collapsedUI} active={activeNav === label} onClick={() => navigateTo(label)} />
             ))}
           </SideSection>
 
           {/* Explore */}
-          {!sidebarCollapsed && <SideSection label="Explore" expanded={expandedSections.Explore} onToggle={() => toggleSection('Explore')} collapsed={sidebarCollapsed}>
+          {!collapsedUI && <SideSection label="Explore" expanded={expandedSections.Explore} onToggle={() => toggleSection('Explore')} collapsed={collapsedUI}>
             {EXPLORE_ITEMS.map(({ Icon, label }) => (
-              <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
+              <SideItem key={label} label={label} icon={<Icon />} collapsed={collapsedUI} active={activeNav === label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
             ))}
           </SideSection>}
 
@@ -250,7 +278,7 @@ export default function App() {
 
         {/* User profile */}
         {profileOpen && (
-          <div ref={profileMenuRef} role="menu" aria-label="Profile menu" style={{ position: 'absolute', zIndex: 20, left: sidebarCollapsed ? 72 : 12, bottom: 72, width: 240, background: '#fff', border: '1px solid #EAECEF', borderRadius: 16, boxShadow: '0 12px 30px rgba(0,0,0,0.18)', padding: 8, animation: 'payvora-menu-in 200ms ease-out' }}>
+          <div ref={profileMenuRef} role="menu" aria-label="Profile menu" style={{ position: 'absolute', zIndex: 20, left: collapsedUI ? 72 : 12, bottom: 72, width: 240, background: '#fff', border: '1px solid #EAECEF', borderRadius: 16, boxShadow: '0 12px 30px rgba(0,0,0,0.18)', padding: 8, animation: 'payvora-menu-in 200ms ease-out' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 12px', borderBottom: '1px solid #EAECEF' }}>
               <Avatar initials="AJ" size={32} />
               <div>
@@ -267,13 +295,13 @@ export default function App() {
           </div>
         )}
         <div style={{ padding: '12px 12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'Profile' : undefined} onClick={() => setProfileOpen(value => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: '#fff' }}>
+          <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} className={collapsedUI ? 'payvora-collapsed-utility' : undefined} data-tooltip={collapsedUI ? 'Profile' : undefined} onClick={() => setProfileOpen(value => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: '#fff' }}>
             <Avatar initials="AJ" size={32} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, color: '#fff', fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>Ademola Johnson</p>
-              <p style={{ margin: 0, color: '#a855f7', fontSize: 10, marginTop: 1, opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>Pro Plan</p>
+              <p style={{ margin: 0, color: '#fff', fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: collapsedUI ? 0 : 1, transition: 'opacity 180ms ease' }}>Ademola Johnson</p>
+              <p style={{ margin: 0, color: '#a855f7', fontSize: 10, marginTop: 1, opacity: collapsedUI ? 0 : 1, transition: 'opacity 180ms ease' }}>Pro Plan</p>
             </div>
-            {!sidebarCollapsed && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d={profileOpen ? 'M3 7.5L6 4.5L9 7.5' : 'M3 4.5L6 7.5L9 4.5'} stroke="rgba(255,255,255,0.4)" strokeWidth="1.4" strokeLinecap="round"/></svg>}
+            {!collapsedUI && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d={profileOpen ? 'M3 7.5L6 4.5L9 7.5' : 'M3 4.5L6 7.5L9 4.5'} stroke="rgba(255,255,255,0.4)" strokeWidth="1.4" strokeLinecap="round"/></svg>}
           </button>
         </div>
       </aside>
@@ -282,8 +310,14 @@ export default function App() {
       <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: C.page, overflow: 'hidden' }}>
 
         {/* Top bar */}
-        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '0 24px', height: 56, background: C.page, borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
-          <button type="button" onClick={() => notify('Upgrade options opened')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', border: `1px solid ${C.brand}40`, borderRadius: 20, background: 'transparent', color: C.brand, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+        <header className="payvora-header" style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: 8, padding: isMobile ? '0 12px' : '0 24px', height: 56, background: C.page, borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+          {isMobile && (
+            <button type="button" aria-label="Open navigation menu" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)} style={{ ...iconBtn, width: 40, height: 40 }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="#333" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </button>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <button type="button" disabled title="Plan upgrades are not available yet — billing is not configured." style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', border: `1px solid ${C.brand}40`, borderRadius: 20, background: 'transparent', color: C.brand, fontSize: 12, fontWeight: 500, cursor: 'not-allowed', opacity: 0.55 }}>
             <svg width="11" height="11" viewBox="0 0 12 12" fill={C.brand}><path d="M6 .5l1.3 4H12L8.5 7l1.3 4L6 9 2.2 11l1.3-4L0 4.5h4.7z"/></svg>
             Upgrade
           </button>
@@ -300,6 +334,7 @@ export default function App() {
             <Avatar initials="AJ" size={32} />
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#555" strokeWidth="1.4" strokeLinecap="round"/></svg>
           </button>
+          </div>
         </header>
 
         {/* Scrollable body */}
