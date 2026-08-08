@@ -1,5 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import VoiceStudioApp from './voice-studio/VoiceStudioApp'
+import ImageStudio from './studios/ImageStudio'
+import VideoStudio from './studios/VideoStudio'
+
+const NAV_PATHS: Record<string, string> = {
+  'AI Chat': '/',
+  'Voice Studio': '/voice-studio',
+  'Image Studio': '/image-studio',
+  'Video Studio': '/video-studio',
+}
+
+function navForPath(pathname: string) {
+  if (pathname === '/voice-studio') return 'Voice Studio'
+  if (pathname === '/image-studio') return 'Image Studio'
+  if (pathname === '/video-studio') return 'Video Studio'
+  return 'AI Chat'
+}
 
 // ── Color tokens (spec-compliant) ──────────────────────────────────────────
 const C = {
@@ -65,7 +81,7 @@ const QUICK = [
 ]
 
 export default function App() {
-  const [activeNav, setActiveNav] = useState('AI Chat')
+  const [activeNav, setActiveNav] = useState(() => navForPath(window.location.pathname))
   const [message, setMessage] = useState('')
   const [activeChat, setActiveChat] = useState('New conversation')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches)
@@ -86,6 +102,7 @@ export default function App() {
   const profileMenuRef = useRef<HTMLDivElement>(null)
   const modelMenuRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
+  const isStudio = ['Image Studio', 'Video Studio', 'Voice Studio'].includes(activeNav)
 
   useEffect(() => {
     window.localStorage.setItem('payvora-expanded-sections', JSON.stringify(expandedSections))
@@ -98,6 +115,12 @@ export default function App() {
     }
     mediaQuery.addEventListener('change', syncSidebar)
     return () => mediaQuery.removeEventListener('change', syncSidebar)
+  }, [])
+
+  useEffect(() => {
+    const syncRoute = () => setActiveNav(navForPath(window.location.pathname))
+    window.addEventListener('popstate', syncRoute)
+    return () => window.removeEventListener('popstate', syncRoute)
   }, [])
 
   useEffect(() => {
@@ -124,13 +147,21 @@ export default function App() {
   }, [modelOpen, notificationsOpen, profileOpen])
 
   const notify = (label: string) => setInteractionMessage(label)
+  const navigateTo = (label: string, announce = true) => {
+    setActiveNav(label)
+    const path = NAV_PATHS[label]
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({}, '', path)
+    }
+    if (announce) notify(`${label} opened`)
+  }
   const toggleSection = (label: string) => {
     setExpandedSections(current => ({ ...current, [label]: !current[label] }))
   }
   const startNewChat = () => {
     setActiveChat('New conversation')
     setMessage('')
-    setActiveNav('AI Chat')
+    navigateTo('AI Chat', false)
     notify('New chat started')
     messageInputRef.current?.focus()
   }
@@ -192,7 +223,7 @@ export default function App() {
               <div key={group}>
                 <p style={{ ...groupLabel, opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>{group}</p>
                 {items.map((item, i) => (
-                  <SideItem key={item} label={item} icon={<ChatIcon />} collapsed={sidebarCollapsed} active={activeChat === item} onClick={() => { setActiveChat(item); setActiveNav('AI Chat'); notify(`${item} opened`) }} />
+                  <SideItem key={item} label={item} icon={<ChatIcon />} collapsed={sidebarCollapsed} active={activeChat === item} onClick={() => { setActiveChat(item); navigateTo('AI Chat', false); notify(`${item} opened`) }} />
                 ))}
               </div>
             ))}
@@ -202,7 +233,7 @@ export default function App() {
           {/* AI Workspace */}
           <SideSection label="AI Workspace" expanded={sidebarCollapsed || expandedSections['AI Workspace']} onToggle={() => toggleSection('AI Workspace')} collapsed={sidebarCollapsed}>
             {WORKSPACE_ITEMS.filter(({ label }) => !sidebarCollapsed || ['AI Chat', 'Voice Studio', 'Image Studio', 'Video Studio'].includes(label)).map(({ Icon, label }) => (
-              <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
+              <SideItem key={label} label={label} icon={<Icon />} collapsed={sidebarCollapsed} active={activeNav === label} onClick={() => navigateTo(label)} />
             ))}
           </SideSection>
 
@@ -270,11 +301,15 @@ export default function App() {
         </header>
 
         {/* Scrollable body */}
-        <div className={activeNav === 'Voice Studio' ? 'payvora-main-scroll voice-studio-scroll' : 'payvora-main-scroll'} style={{ flex: 1, overflowY: 'auto', padding: activeNav === 'Voice Studio' ? 0 : '32px 32px 0' }}>
+        <div className={isStudio ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'} style={{ flex: 1, overflowY: 'auto', padding: isStudio ? 0 : '32px 32px 0' }}>
           {activeNav === 'Voice Studio' ? (
             <div className="voice-studio-page">
               <VoiceStudioApp />
             </div>
+          ) : activeNav === 'Image Studio' ? (
+            <ImageStudio onBack={() => navigateTo('AI Chat', false)} onNotify={notify} />
+          ) : activeNav === 'Video Studio' ? (
+            <VideoStudio onBack={() => navigateTo('AI Chat', false)} onNotify={notify} />
           ) : (
             <>
 
@@ -287,7 +322,7 @@ export default function App() {
           {/* Studio cards */}
           <div className="payvora-studio-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
             {STUDIO_CARDS.map(({ bg, fg, Icon, title, sub }) => (
-              <div key={title} role="button" tabIndex={0} aria-label={`Open ${title}`} onClick={() => { setActiveNav(title); notify(`${title} opened`) }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveNav(title); notify(`${title} opened`) } }} style={{ background: C.card, border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, padding: 20, cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+              <div key={title} role="button" tabIndex={0} aria-label={`Open ${title}`} onClick={() => navigateTo(title)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigateTo(title) } }} style={{ background: C.card, border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, padding: 20, cursor: 'pointer', transition: 'box-shadow 0.15s' }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.07)')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
@@ -377,6 +412,7 @@ export default function App() {
       </main>
 
       {/* ── RIGHT SIDEBAR ─────────────────────────────────────────────────── */}
+      {!isStudio && (
       <aside style={{ width: 316, flexShrink: 0, background: C.page, borderLeft: '1px solid #EAECEF', height: '100%', overflowY: 'auto' }}>
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -413,7 +449,10 @@ export default function App() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {TOOLS.map(({ bg, fg, Icon, label }) => (
-                <ToolRow key={label} bg={bg} fg={fg} Icon={Icon} label={label} onClick={() => { setActiveNav(label); notify(`${label} opened`) }} />
+                <ToolRow key={label} bg={bg} fg={fg} Icon={Icon} label={label} onClick={() => {
+                  const target = label === 'Image to Image' ? 'Image Studio' : label === 'Text to Video' ? 'Video Studio' : label.includes('Speech') ? 'Voice Studio' : label
+                  navigateTo(target)
+                }} />
               ))}
             </div>
           </div>
@@ -434,6 +473,7 @@ export default function App() {
 
         </div>
       </aside>
+      )}
 
       {interactionMessage && (
         <div role="status" style={{ position: 'fixed', left: '50%', bottom: 24, zIndex: 40, transform: 'translateX(-50%)', background: '#13161C', color: '#fff', borderRadius: 10, padding: '9px 14px', fontSize: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.16)', animation: 'payvora-menu-in 200ms ease-out' }}>
