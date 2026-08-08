@@ -31,7 +31,7 @@ export default function TextToSpeech() {
   return (
     <div className="voice-studio-layout" style={{ display: 'flex', gap: 20, padding: '20px 24px 40px' }}>
       {/* ── Left column ─────────────────────────────────────────────── */}
-      <div className="voice-selection-column" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="voice-selection-column" style={{ flex: 1, minWidth: 0, containerType: 'inline-size', containerName: 'voice-column', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* Text input */}
         <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>

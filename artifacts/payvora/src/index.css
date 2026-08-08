@@ -99,6 +99,38 @@ button:disabled {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
+.payvora-collapsed-utility {
+  position: relative;
+  overflow: visible;
+}
+
+.payvora-collapsed-utility::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 40;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-4px, -50%);
+  opacity: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: #21232B;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+  font-size: 12px;
+  font-weight: 500;
+  transition: opacity 140ms ease 180ms, transform 140ms ease 180ms;
+}
+
+.payvora-collapsed-utility:hover::after,
+.payvora-collapsed-utility:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
 .payvora-side-item:hover .payvora-sidebar-tooltip,
 .payvora-side-item:focus-visible .payvora-sidebar-tooltip {
   opacity: 1;
@@ -136,10 +168,6 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
-  .voice-studio-page .voice-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
   .voice-studio-page [style*='grid-template-columns: repeat(4'] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -154,18 +182,6 @@ button:disabled {
 
   .voice-studio-page .voice-settings-column {
     width: 100% !important;
-  }
-}
-
-@media (max-width: 900px) and (min-width: 761px) {
-  .voice-studio-page .voice-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .voice-studio-page .voice-card-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 

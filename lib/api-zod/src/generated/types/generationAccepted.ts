@@ -6,6 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
+export interface GenerationAccepted {
+  generationId: string;
   status: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  progress: number;
 }

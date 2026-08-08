@@ -5,7 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { VoiceSummary } from './voiceSummary';
 
-export interface HealthStatus {
-  status: string;
-}
+export type ListVoices200 = {
+  voices: VoiceSummary[];
+};

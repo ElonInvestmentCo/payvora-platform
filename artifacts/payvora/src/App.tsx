@@ -197,7 +197,7 @@ export default function App() {
 
         {/* New Chat */}
         <div style={{ padding: sidebarCollapsed ? '0 8px 8px' : '0 12px 8px' }}>
-          <button type="button" aria-label="New chat" title={sidebarCollapsed ? 'New chat' : undefined} onClick={startNewChat} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: '9px 12px', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}>
+          <button type="button" aria-label="New chat" className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'New Chat' : undefined} onClick={startNewChat} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: '9px 12px', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 12, cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v10M1.5 6.5h10" stroke="white" strokeWidth="1.6" strokeLinecap="round"/></svg>
               <span style={{ opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>New Chat</span>
@@ -208,7 +208,7 @@ export default function App() {
 
         {/* Search */}
         <div style={{ padding: sidebarCollapsed ? '0 8px 12px' : '0 12px 12px' }}>
-          <div title={sidebarCollapsed ? 'Search' : undefined} style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'Search' : undefined} style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', gap: 8, padding: '8px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.07)' }}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4"/><path d="M12.5 12.5L16 16" stroke="rgba(255,255,255,0.35)" strokeWidth="1.4" strokeLinecap="round"/></svg>
             <input aria-label="Search chats" type="search" placeholder={sidebarCollapsed ? '' : 'Search chats'} style={{ opacity: sidebarCollapsed ? 0 : 1, width: sidebarCollapsed ? 0 : '100%', background: 'transparent', border: 'none', outline: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 12, transition: 'opacity 180ms ease, width 220ms ease' }} />
           </div>
@@ -265,7 +265,7 @@ export default function App() {
           </div>
         )}
         <div style={{ padding: '12px 12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} title={sidebarCollapsed ? 'Open profile menu' : undefined} onClick={() => setProfileOpen(value => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: '#fff' }}>
+          <button type="button" aria-haspopup="menu" aria-expanded={profileOpen} className={sidebarCollapsed ? 'payvora-collapsed-utility' : undefined} data-tooltip={sidebarCollapsed ? 'Profile' : undefined} onClick={() => setProfileOpen(value => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: '#fff' }}>
             <Avatar initials="AJ" size={32} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, color: '#fff', fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: sidebarCollapsed ? 0 : 1, transition: 'opacity 180ms ease' }}>Ademola Johnson</p>
