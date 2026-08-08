@@ -217,7 +217,7 @@ export default function App() {
         </div>
 
         {/* Scrollable nav */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '0 8px' }}>
 
           {/* Chats */}
           {!sidebarCollapsed && <SideSection label="Chats" expanded={expandedSections.Chats} onToggle={() => toggleSection('Chats')} collapsed={sidebarCollapsed}>
@@ -279,7 +279,7 @@ export default function App() {
       </aside>
 
       {/* ── MAIN CONTENT ──────────────────────────────────────────────────── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', background: C.page, height: '100%', overflow: 'hidden' }}>
+      <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column', background: C.page, overflow: 'hidden' }}>
 
         {/* Top bar */}
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, padding: '0 24px', height: 56, background: C.page, borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
@@ -303,7 +303,7 @@ export default function App() {
         </header>
 
         {/* Scrollable body */}
-        <div className={isFixedStudio ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'} style={{ flex: 1, overflowY: 'auto', padding: isStudio ? 0 : '32px 32px 0' }}>
+        <div className={isFixedStudio ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: isStudio ? 0 : '32px 32px 0' }}>
           {activeNav === 'Voice Studio' ? (
             <div className="voice-studio-page">
               <VoiceStudioApp />
@@ -415,7 +415,7 @@ export default function App() {
 
       {/* ── RIGHT SIDEBAR ─────────────────────────────────────────────────── */}
       {!isStudio && (
-      <aside style={{ width: 316, flexShrink: 0, background: C.page, borderLeft: '1px solid #EAECEF', height: '100%', overflowY: 'auto' }}>
+      <aside style={{ width: 316, flexShrink: 0, minHeight: 0, background: C.page, borderLeft: '1px solid #EAECEF', overflowY: 'auto', overscrollBehavior: 'contain' }}>
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* CARD 1 — Recent Projects */}
