@@ -174,7 +174,7 @@ export default function App() {
   }
 
   return (
-    <div className="payvora-app" style={{ display: 'flex', height: '100vh', background: C.page, fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }} aria-live="polite">
+    <div className="payvora-app" style={{ display: 'flex', background: C.page, fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }} aria-live="polite">
 
       {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
       <aside className="payvora-sidebar" data-collapsed={sidebarCollapsed} style={{ width: sidebarCollapsed ? 64 : 248, flexShrink: 0, background: C.sidebar, display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'relative', transition: 'width 220ms cubic-bezier(0.22, 1, 0.36, 1)' }}>

@@ -15,48 +15,20 @@
   box-sizing: border-box;
 }
 
-/* ── Subtle, modern scrollbars (visible but unobtrusive) ──────────────────
-   Light-surface default: thin translucent track, rounded thumb.
-   Webkit (Chrome/Edge/Safari) gets custom styling; Firefox uses scrollbar-width.
-   Specific UI strips (tabs, pill bars, tooltip) keep scrollbar-width:none.    */
+/* ── Hide scrollbars globally — scrolling remains fully functional ────────
+   All scroll methods (wheel, trackpad, touch, keyboard, programmatic) work.
+   Only the visual scrollbar track/thumb is hidden.
+   Firefox  → scrollbar-width: none
+   Chromium/Edge/Safari → ::-webkit-scrollbar { display: none }
+   IE/Edge legacy → -ms-overflow-style: none                                  */
 
-/* Default: show thin scrollbars everywhere */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ / Edge legacy */
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 3px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.30);
-}
-
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Dark surfaces (sidebar) — lighter thumb so it shows on dark bg */
-.payvora-sidebar *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
-}
-.payvora-sidebar *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.30);
-}
-.payvora-sidebar * {
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  display: none;                /* Chromium, Edge, Safari */
 }
 
 html {
@@ -264,11 +236,22 @@ button:disabled {
 
 /* ≥ 961px: all five cards in a row (default inline style) */
 
+/* ── App shell — full-viewport height with mobile browser bar support ──────
+   100dvh (dynamic viewport height) shrinks when the browser's address bar is
+   visible on iOS/Android, preventing the classic "content cut off" problem.
+   100vh is the fallback for browsers that don't support dvh yet.             */
+.payvora-app {
+  height: 100vh;       /* fallback */
+  height: 100dvh;      /* iOS Safari 15.4+, Chrome 108+, Firefox 116+ */
+}
+
 /* ── Main content scroll container ──────────────────────────────────────── */
 /* scroll-padding-top accounts for the 56px sticky top bar so keyboard-focused
    elements and in-page anchors are never obscured by the header.             */
 .payvora-main-scroll {
   scroll-padding-top: 56px;
+  /* Smooth inertia scrolling on iOS/Android */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Focusable sections reveal themselves above the sticky header */
@@ -523,6 +506,7 @@ button:disabled {
   flex: 1 1 auto;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 24px;
 }
 
@@ -864,6 +848,7 @@ button:disabled {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border-left: 1px solid #e5e7eb;
   background: #fff;
 }
