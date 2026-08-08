@@ -46,8 +46,18 @@ export const ParseVoiceTextBody = zod.object({
 })
 
 export const ParseVoiceTextResponse = zod.object({
-  "events": zod.array(zod.looseObject({
-
+  "events": zod.array(zod.object({
+  "type": zod.enum(['speech', 'pause', 'vocal_event']),
+  "text": zod.string().optional(),
+  "controls": zod.object({
+  "emotion": zod.string().optional(),
+  "speed": zod.number().optional(),
+  "energy": zod.number().optional(),
+  "pitch": zod.number().optional()
+}).optional(),
+  "seconds": zod.number().optional(),
+  "event": zod.string().optional(),
+  "description": zod.string().optional()
 })),
   "tags": zod.array(zod.object({
   "raw": zod.string(),

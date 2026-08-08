@@ -28,7 +28,30 @@ export interface ParseVoiceTextRequest {
   text: string;
 }
 
-export type ParsedVoiceTextEventsItem = { [key: string]: unknown };
+export type SpeechEventType = typeof SpeechEventType[keyof typeof SpeechEventType];
+
+
+export const SpeechEventType = {
+  speech: 'speech',
+  pause: 'pause',
+  vocal_event: 'vocal_event',
+} as const;
+
+export type SpeechEventControls = {
+  emotion?: string;
+  speed?: number;
+  energy?: number;
+  pitch?: number;
+};
+
+export interface SpeechEvent {
+  type: SpeechEventType;
+  text?: string;
+  controls?: SpeechEventControls;
+  seconds?: number;
+  event?: string;
+  description?: string;
+}
 
 export type ParsedVoiceTextTagsItem = {
   raw: string;
@@ -36,7 +59,7 @@ export type ParsedVoiceTextTagsItem = {
 };
 
 export interface ParsedVoiceText {
-  events: ParsedVoiceTextEventsItem[];
+  events: SpeechEvent[];
   tags: ParsedVoiceTextTagsItem[];
 }
 

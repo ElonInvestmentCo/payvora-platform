@@ -6,4 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ParsedVoiceTextEventsItem = { [key: string]: unknown };
+export type SpeechEventControls = {
+  emotion?: string;
+  speed?: number;
+  energy?: number;
+  pitch?: number;
+};

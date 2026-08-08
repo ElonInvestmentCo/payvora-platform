@@ -57,7 +57,7 @@ export class F5TtsClient {
     form.set("compute_type", this.config.computeType);
     form.set("controls", JSON.stringify(request.controls));
     form.set("response_format", "wav");
-    form.set("reference_audio", new Blob([request.referenceAudio], { type: "audio/wav" }), "reference.wav");
+    form.set("reference_audio", new Blob([new Uint8Array(request.referenceAudio)], { type: "audio/wav" }), "reference.wav");
     return this.request("/v1/speech", form);
   }
 
@@ -69,13 +69,13 @@ export class F5TtsClient {
     form.set("device", this.config.device);
     form.set("compute_type", this.config.computeType);
     form.set("response_format", "wav");
-    form.set("reference_audio", new Blob([request.referenceAudio], { type: "audio/wav" }), "reference.wav");
+    form.set("reference_audio", new Blob([new Uint8Array(request.referenceAudio)], { type: "audio/wav" }), "reference.wav");
     return this.request("/v1/vocal-event", form);
   }
 
   async transcribe(audio: Buffer): Promise<string> {
     const form = new FormData();
-    form.set("audio", new Blob([audio], { type: "audio/wav" }), "reference.wav");
+    form.set("audio", new Blob([new Uint8Array(audio)], { type: "audio/wav" }), "reference.wav");
     if (!this.configured) throw new F5TtsUnavailableError();
     const response = await fetch(`${this.config.serviceUrl}/v1/transcribe`, { method: "POST", body: form });
     if (!response.ok) throw new Error(`Transcription worker returned HTTP ${response.status}.`);

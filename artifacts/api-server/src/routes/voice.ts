@@ -32,8 +32,8 @@ router.get("/voice/tags", (_req, res) => res.json({ tags: listTags() }));
 router.post("/voices", async (req, res) => {
   const ownerId = sessionOwner(req, res);
   const name = String(req.header("x-voice-name") ?? "").trim();
-  if (!name || name.length > 80) return res.status(400).json({ message: "x-voice-name is required and must be 80 characters or fewer." });
-  if (!Buffer.isBuffer(req.body)) return res.status(415).json({ message: "Send reference audio bytes with an audio content type." });
+  if (!name || name.length > 80) return void res.status(400).json({ message: "x-voice-name is required and must be 80 characters or fewer." });
+  if (!Buffer.isBuffer(req.body)) return void res.status(415).json({ message: "Send reference audio bytes with an audio content type." });
   try {
     const audio = await validateAndNormalizeReference(req.body);
     const voice = await storage.saveVoice({ ownerId, name, audio, referenceText: req.header("x-reference-text")?.trim() || undefined });
@@ -62,7 +62,7 @@ router.delete("/voices/:id", async (req, res) => {
 router.post("/voices/:id/generate", async (req, res) => {
   const ownerId = sessionOwner(req, res);
   const body = req.body as { text?: unknown; settings?: Record<string, unknown> };
-  if (typeof body?.text !== "string") return res.status(400).json({ message: "text is required." });
+  if (typeof body?.text !== "string") return void res.status(400).json({ message: "text is required." });
   try {
     const job = await manager.create(ownerId, req.params.id, body.text, body.settings);
     res.status(202).json({ generationId: job.id, status: job.status, progress: job.progress });
@@ -75,7 +75,7 @@ router.post("/voices/:id/generate", async (req, res) => {
 router.post("/voices/:id/preview", async (req, res) => {
   const ownerId = sessionOwner(req, res);
   const body = req.body as { text?: unknown };
-  if (typeof body?.text !== "string") return res.status(400).json({ message: "text is required." });
+  if (typeof body?.text !== "string") return void res.status(400).json({ message: "text is required." });
   try {
     const job = await manager.create(ownerId, req.params.id, body.text);
     res.status(202).json({ generationId: job.id, status: job.status, progress: job.progress });
@@ -85,7 +85,7 @@ router.post("/voices/:id/preview", async (req, res) => {
 });
 
 router.post("/audio/transcribe", async (req, res) => {
-  if (!Buffer.isBuffer(req.body)) return res.status(415).json({ message: "Send audio bytes with an audio content type." });
+  if (!Buffer.isBuffer(req.body)) return void res.status(415).json({ message: "Send audio bytes with an audio content type." });
   try {
     const audio = await validateAndNormalizeReference(req.body);
     const text = await new F5TtsClient().transcribe(audio);
@@ -109,7 +109,7 @@ router.get("/generation/:id/audio", async (req, res) => {
   const ownerId = sessionOwner(req, res);
   try {
     const job = manager.get(ownerId, req.params.id);
-    if (job.status !== "completed") return res.status(409).json({ message: "Generation is not complete." });
+    if (job.status !== "completed") return void res.status(409).json({ message: "Generation is not complete." });
     const audio = await storage.readGeneration(ownerId, job.id);
     res.type("audio/wav").send(audio);
   } catch {
@@ -119,7 +119,7 @@ router.get("/generation/:id/audio", async (req, res) => {
 
 router.post("/voice/parse", (req, res) => {
   const body = req.body as { text?: unknown };
-  if (typeof body?.text !== "string") return res.status(400).json({ message: "text is required." });
+  if (typeof body?.text !== "string") return void res.status(400).json({ message: "text is required." });
   try {
     res.json(parseTaggedText(body.text));
   } catch (error) {

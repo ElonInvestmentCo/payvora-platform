@@ -512,22 +512,40 @@ function SideSection({ label, children, expanded, onToggle, collapsed }: { label
 
 function SideItem({ label, icon, active, onClick, collapsed }: { label: string; icon?: React.ReactNode; active?: boolean; onClick: () => void; collapsed: boolean }) {
   const [hov, setHov] = useState(false)
+  const [tooltipY, setTooltipY] = useState(0)
+  const btnRef = useRef<HTMLButtonElement>(null)
   const bg = active ? '#23252E' : hov ? '#21232B' : 'transparent'
+
+  const handleMouseEnter = () => {
+    setHov(true)
+    if (collapsed && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setTooltipY(rect.top + rect.height / 2)
+    }
+  }
+
   return (
     <button
+      ref={btnRef}
       type="button"
       aria-label={label}
-      title={collapsed ? label : undefined}
       onClick={onClick}
-      onMouseEnter={() => setHov(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setHov(false)}
       className="payvora-side-item"
-      data-tooltip={collapsed ? label : undefined}
       style={{ width: '100%', minHeight: 40, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, padding: collapsed ? 0 : '7px 10px', borderRadius: 10, border: 'none', background: bg, color: active ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: active ? 500 : 400, cursor: 'pointer', textAlign: 'left', transition: 'background 180ms ease, color 180ms ease, transform 180ms ease' }}
     >
       {icon && <span className="payvora-side-icon" style={{ width: 22, height: 22, opacity: active ? 1 : 0.75, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</span>}
       <span style={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto', overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity 180ms ease, width 220ms ease' }}>{label}</span>
-      {collapsed && <span className="payvora-sidebar-tooltip" role="tooltip">{label}</span>}
+      {collapsed && hov && (
+        <span
+          className="payvora-sidebar-tooltip payvora-sidebar-tooltip--fixed"
+          role="tooltip"
+          style={{ top: tooltipY }}
+        >
+          {label}
+        </span>
+      )}
     </button>
   )
 }

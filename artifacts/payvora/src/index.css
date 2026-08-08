@@ -80,14 +80,14 @@ button:disabled {
 }
 
 .payvora-sidebar-tooltip {
+  /* Default: absolute for any non-nav usage */
   position: absolute;
   left: calc(100% + 10px);
   top: 50%;
   z-index: 30;
   pointer-events: none;
   white-space: nowrap;
-  transform: translate(-4px, -50%);
-  opacity: 0;
+  transform: translate(0, -50%);
   padding: 7px 10px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
@@ -96,7 +96,16 @@ button:disabled {
   box-shadow: 0 8px 20px rgba(0,0,0,0.22);
   font-size: 12px;
   font-weight: 500;
-  transition: opacity 140ms ease, transform 140ms ease;
+  animation: payvora-tooltip-in 140ms ease both;
+}
+
+/* Fixed variant used by SideItem inside scrollable nav — escapes overflow clip */
+.payvora-sidebar-tooltip--fixed {
+  position: fixed;
+  left: 72px;
+  top: 0; /* overridden by inline style */
+  z-index: 200;
+  transform: translateY(-50%);
 }
 
 .payvora-collapsed-utility {
@@ -131,10 +140,20 @@ button:disabled {
   transform: translate(0, -50%);
 }
 
-.payvora-side-item:hover .payvora-sidebar-tooltip,
-.payvora-side-item:focus-visible .payvora-sidebar-tooltip {
-  opacity: 1;
-  transform: translate(0, -50%);
+/* Tooltip is now conditionally rendered; no separate :hover rule needed */
+
+@keyframes payvora-tooltip-in {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to   { opacity: 1; transform: translate(0,   -50%); }
+}
+
+/* Fixed variant entrance overrides translateY only */
+.payvora-sidebar-tooltip--fixed {
+  animation: payvora-tooltip-in-fixed 140ms ease both;
+}
+@keyframes payvora-tooltip-in-fixed {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to   { opacity: 1; transform: translateY(-50%); }
 }
 
 @keyframes payvora-menu-in {
@@ -168,14 +187,6 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
-  .voice-studio-page [style*='grid-template-columns: repeat(4'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .voice-studio-page [style*='width: 300px'] {
-    width: 100% !important;
-  }
-
   .voice-studio-page .voice-studio-layout {
     flex-wrap: wrap !important;
   }
@@ -184,6 +195,30 @@ button:disabled {
     width: 100% !important;
   }
 }
+
+/* ── Voice card grid — container queries (respond to actual column width) ── */
+/* The voice-selection-column div already carries container-type:inline-size
+   and container-name:voice-column via its inline style in TextToSpeech.tsx. */
+
+@container voice-column (max-width: 540px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@container voice-column (min-width: 541px) and (max-width: 760px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@container voice-column (min-width: 761px) and (max-width: 960px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ≥ 961px: all five cards in a row (default inline style) */
 
 @media (prefers-reduced-motion: reduce) {
   html {

@@ -5,10 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ParsedVoiceTextEventsItem } from './parsedVoiceTextEventsItem';
 import type { ParsedVoiceTextTagsItem } from './parsedVoiceTextTagsItem';
+import type { SpeechEvent } from './speechEvent';
 
 export interface ParsedVoiceText {
-  events: ParsedVoiceTextEventsItem[];
+  events: SpeechEvent[];
   tags: ParsedVoiceTextTagsItem[];
 }
