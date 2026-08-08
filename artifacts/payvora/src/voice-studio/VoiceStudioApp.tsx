@@ -53,10 +53,10 @@ export default function App() {
       </div>
 
       {/* ── Page content ────────────────────────────────────────────────── */}
-      {activeTab === 'text-to-speech' && <TextToSpeech />}
-      {activeTab === 'voice-clone'    && <VoiceClone   />}
-      {activeTab === 'my-voices'      && <MyVoices     />}
-      {activeTab === 'history'        && <History      />}
+      {activeTab === 'text-to-speech' && <TextToSpeech onNavigate={setActiveTab} />}
+      {activeTab === 'voice-clone'    && <VoiceClone   onNavigate={setActiveTab} />}
+      {activeTab === 'my-voices'      && <MyVoices     onNavigate={setActiveTab} />}
+      {activeTab === 'history'        && <History      onNavigate={setActiveTab} />}
     </div>
   )
 }

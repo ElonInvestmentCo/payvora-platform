@@ -236,6 +236,11 @@ button:disabled {
 
 /* ≥ 961px: all five cards in a row (default inline style) */
 
+/* Spinner used by play buttons and async controls */
+@keyframes payvora-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── App shell — full-viewport height with mobile browser bar support ──────
    100dvh (dynamic viewport height) shrinks when the browser's address bar is
    visible on iOS/Android, preventing the classic "content cut off" problem.

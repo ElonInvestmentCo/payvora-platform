@@ -50,6 +50,45 @@ export async function concatenateAudio(files: Buffer[], pauses: number[]): Promi
   }
 }
 
+export async function probeDurationSeconds(input: Buffer): Promise<number | undefined> {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "payvora-probe-"));
+  try {
+    const source = path.join(directory, "audio.wav");
+    await writeFile(source, input);
+    const { stdout } = await execFileAsync(ffprobe, ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", source], { timeout: 15_000 });
+    const seconds = Number.parseFloat(stdout.trim());
+    return Number.isFinite(seconds) ? seconds : undefined;
+  } catch {
+    return undefined;
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
+const SUPPORTED_FORMATS = { wav: { ext: "wav", mime: "audio/wav", args: [] as string[] }, mp3: { ext: "mp3", mime: "audio/mpeg", args: ["-codec:a", "libmp3lame", "-qscale:a", "2"] } };
+const SUPPORTED_SAMPLE_RATES = [16000, 22050, 24000, 44100, 48000];
+
+export type AudioFormat = keyof typeof SUPPORTED_FORMATS;
+export function isSupportedFormat(value: string): value is AudioFormat { return value in SUPPORTED_FORMATS; }
+export function isSupportedSampleRate(value: number): boolean { return SUPPORTED_SAMPLE_RATES.includes(value); }
+export function formatMime(format: AudioFormat): string { return SUPPORTED_FORMATS[format].mime; }
+
+export async function transcodeAudio(input: Buffer, format: AudioFormat, sampleRate?: number): Promise<Buffer> {
+  if (format === "wav" && (!sampleRate || sampleRate === 24000)) return input;
+  const spec = SUPPORTED_FORMATS[format];
+  const directory = await mkdtemp(path.join(os.tmpdir(), "payvora-transcode-"));
+  try {
+    const source = path.join(directory, "source.wav");
+    const output = path.join(directory, `output.${spec.ext}`);
+    await writeFile(source, input);
+    const rateArgs = sampleRate ? ["-ar", String(sampleRate)] : [];
+    await execFileAsync(ffmpeg, ["-y", "-i", source, ...rateArgs, ...spec.args, output], { timeout: 60_000 });
+    return readFile(output);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
+
 export async function timeStretchAudio(input: Buffer, speed: number): Promise<Buffer> {
   if (speed === 1) return input;
   const directory = await mkdtemp(path.join(os.tmpdir(), "payvora-speed-"));
