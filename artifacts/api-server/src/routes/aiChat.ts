@@ -1,0 +1,153 @@
+import { Router, type IRouter } from "express";
+import { db, conversations, messages as messagesTable } from "@workspace/db";
+import { and, asc, desc, eq } from "drizzle-orm";
+import { openai } from "@workspace/integrations-openai-ai-server";
+import { sessionOwner, errorMessage } from "../lib/session";
+import { recordUsage } from "../lib/usage";
+
+const router: IRouter = Router();
+
+type ConversationRow = typeof conversations.$inferSelect;
+type MessageRow = typeof messagesTable.$inferSelect;
+
+const conversationJson = (c: ConversationRow) => ({
+  id: c.id,
+  kind: c.kind,
+  title: c.title,
+  agentId: c.agentId,
+  documentId: c.documentId,
+  createdAt: c.createdAt.toISOString(),
+});
+
+const messageJson = (m: MessageRow) => ({
+  id: m.id,
+  conversationId: m.conversationId,
+  role: m.role,
+  content: m.content,
+  createdAt: m.createdAt.toISOString(),
+});
+
+async function ownedConversation(ownerId: string, id: number): Promise<ConversationRow | undefined> {
+  const [row] = await db.select().from(conversations).where(and(eq(conversations.id, id), eq(conversations.ownerId, ownerId), eq(conversations.kind, "chat")));
+  return row;
+}
+
+// ── Conversations ────────────────────────────────────────────────────────────
+router.get("/chat/conversations", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const rows = await db.select().from(conversations).where(and(eq(conversations.ownerId, ownerId), eq(conversations.kind, "chat"))).orderBy(desc(conversations.createdAt));
+  res.json({ conversations: rows.map(conversationJson) });
+});
+
+router.post("/chat/conversations", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const title = String((req.body as { title?: unknown }).title ?? "New conversation").trim().slice(0, 120) || "New conversation";
+  const [row] = await db.insert(conversations).values({ ownerId, kind: "chat", title }).returning();
+  res.status(201).json(conversationJson(row));
+});
+
+router.patch("/chat/conversations/:id", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return void res.status(400).json({ message: "Invalid conversation id." });
+  const title = String((req.body as { title?: unknown }).title ?? "").trim().slice(0, 120);
+  if (!title) return void res.status(422).json({ message: "Title is required." });
+  const [row] = await db.update(conversations).set({ title }).where(and(eq(conversations.id, id), eq(conversations.ownerId, ownerId), eq(conversations.kind, "chat"))).returning();
+  if (!row) return void res.status(404).json({ message: "Conversation not found." });
+  res.json(conversationJson(row));
+});
+
+router.delete("/chat/conversations/:id", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return void res.status(400).json({ message: "Invalid conversation id." });
+  const [row] = await db.delete(conversations).where(and(eq(conversations.id, id), eq(conversations.ownerId, ownerId), eq(conversations.kind, "chat"))).returning();
+  if (!row) return void res.status(404).json({ message: "Conversation not found." });
+  res.status(204).end();
+});
+
+// ── Messages ──────────────────────────────────────────────────────────────────
+router.get("/chat/conversations/:id/messages", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return void res.status(400).json({ message: "Invalid conversation id." });
+  const convo = await ownedConversation(ownerId, id);
+  if (!convo) return void res.status(404).json({ message: "Conversation not found." });
+  const rows = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id)).orderBy(asc(messagesTable.id));
+  res.json({ messages: rows.map(messageJson) });
+});
+
+// ── Send a message → SSE streamed AI reply, both sides persisted ──────────────
+router.post("/chat/conversations/:id/messages", async (req, res) => {
+  const ownerId = sessionOwner(req, res);
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return void res.status(400).json({ message: "Invalid conversation id." });
+  const convo = await ownedConversation(ownerId, id);
+  if (!convo) return void res.status(404).json({ message: "Conversation not found." });
+
+  const content = String((req.body as { content?: unknown }).content ?? "").trim();
+  if (!content) return void res.status(422).json({ message: "Message content is required." });
+
+  // Persist the user message immediately.
+  await db.insert(messagesTable).values({ conversationId: id, role: "user", content });
+
+  // Auto-title from the first user message.
+  const priorCount = (await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id))).length;
+  if (priorCount <= 1 && (convo.title === "New conversation" || !convo.title.trim())) {
+    await db.update(conversations).set({ title: content.slice(0, 60) }).where(and(eq(conversations.id, id), eq(conversations.ownerId, ownerId)));
+  }
+
+  const history = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id)).orderBy(asc(messagesTable.id));
+  const aiMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+    { role: "system", content: "You are Payvora's AI assistant. Be helpful, concise, and accurate. If you do not know something, say so." },
+    ...history.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content } as const)),
+  ];
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+
+  let assembled = "";
+  // Abort upstream generation when the client disconnects (Stop button / closed tab)
+  // so the saved transcript matches what was actually delivered.
+  const abort = new AbortController();
+  res.on("close", () => { if (!res.writableEnded) abort.abort(); });
+  try {
+    const stream = await openai.chat.completions.create({
+      model: "gpt-5.6-terra",
+      max_completion_tokens: 8192,
+      stream: true,
+      stream_options: { include_usage: true },
+      messages: aiMessages,
+    }, { signal: abort.signal });
+    let usageTokens = 0;
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? "";
+      if (delta) {
+        assembled += delta;
+        res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+      }
+      if (chunk.usage?.total_tokens) usageTokens = chunk.usage.total_tokens;
+    }
+    if (assembled.trim()) await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: assembled });
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+    const tokens = usageTokens > 0 ? usageTokens : Math.ceil((JSON.stringify(aiMessages).length + assembled.length) / 4);
+    await recordUsage(ownerId, "ai_tokens", tokens, { feature: "chat", conversationId: id });
+  } catch (error) {
+    if (abort.signal.aborted) {
+      // Client stopped generation — persist only what was delivered, marked as stopped.
+      if (assembled.trim()) await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: assembled + "\n\n_[stopped by user]_" }).catch(() => {});
+      return;
+    }
+    if (!res.headersSent) {
+      res.status(502).json({ message: errorMessage(error, "AI request failed.") });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: errorMessage(error, "AI request failed.") })}\n\n`);
+      res.end();
+    }
+  }
+});
+
+export default router;

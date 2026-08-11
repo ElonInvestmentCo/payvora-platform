@@ -1,0 +1,1089 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-sidebar: #13161C;
+  --color-surface-primary: #21232B;
+  --color-surface-secondary: #23252E;
+  --color-page: #FBFAFC;
+  --color-card: #FFFFFF;
+  --color-hover: rgba(10, 132, 255, 0.08);
+  --color-brand: #0A84FF;
+}
+
+/* ── Theme variables (light default, dark override, accent set by ThemeProvider) ── */
+:root {
+  --pv-sidebar: #FFFFFF;
+  --pv-page: #F8F9FB;
+  --pv-card: #FFFFFF;
+  --pv-card-raised: #FFFFFF;
+  --pv-hover: rgba(0, 0, 0, 0.05);
+  --pv-brand: #3C8CFF; /* Payvora primary */
+  --pv-blue: #3C8CFF;
+  --pv-blue-soft: rgba(60, 140, 255, 0.10);
+  --pv-accent: #7C3AED;
+  --pv-accent-soft: rgba(124, 58, 237, 0.10);
+  --pv-blue-strong: #1E63D0; /* primary button fill: ≥4.5:1 with white text */
+  --pv-ok: #15803d;
+  --pv-ok-soft: rgba(22, 163, 74, 0.12);
+  --pv-tint-teal: #0d9488;
+  --pv-tint-red: #dc2626;
+  --pv-tint-amber: #d97706;
+  --pv-border: rgba(0, 0, 0, 0.08);
+  --pv-border-strong: rgba(0, 0, 0, 0.12);
+  --pv-text: #0d0d0d;
+  --pv-text-secondary: rgba(0, 0, 0, 0.65);
+  --pv-text-muted: rgba(0, 0, 0, 0.45);
+  --pv-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  --pv-pill-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  --pv-input-bg: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --pv-sidebar: #1A1A1A;
+  --pv-page: #1A1A1A;
+  --pv-card: #252525;
+  --pv-card-raised: #2e2e2e;
+  --pv-hover: rgba(255, 255, 255, 0.1);
+  --pv-brand: #5CA0FF;
+  --pv-blue: #5CA0FF;
+  --pv-blue-soft: rgba(92, 160, 255, 0.16);
+  --pv-accent: #9D6BFF;
+  --pv-accent-soft: rgba(157, 107, 255, 0.18);
+  --pv-blue-strong: #2E6FD6;
+  --pv-ok: #4ade80;
+  --pv-ok-soft: rgba(74, 222, 128, 0.16);
+  --pv-tint-teal: #2dd4bf;
+  --pv-tint-red: #f87171;
+  --pv-tint-amber: #fbbf24;
+  --pv-border: rgba(255, 255, 255, 0.1);
+  --pv-border-strong: rgba(255, 255, 255, 0.16);
+  --pv-text: #f4f4f5;
+  --pv-text-secondary: rgba(255, 255, 255, 0.72);
+  --pv-text-muted: rgba(255, 255, 255, 0.5);
+  --pv-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --pv-pill-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  --pv-input-bg: #141414;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ── Hide scrollbars globally — scrolling remains fully functional ────────
+   All scroll methods (wheel, trackpad, touch, keyboard, programmatic) work.
+   Only the visual scrollbar track/thumb is hidden.
+   Firefox  → scrollbar-width: none
+   Chromium/Edge/Safari → ::-webkit-scrollbar { display: none }
+   IE/Edge legacy → -ms-overflow-style: none                                  */
+
+* {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ / Edge legacy */
+}
+
+*::-webkit-scrollbar {
+  display: none;                /* Chromium, Edge, Safari */
+}
+
+/* ── PAYVORA custom scrollbar ──────────────────────────────────────────── */
+/* Native scrollbars are visually hidden above; this fixed, six-pixel control
+   mirrors the active native page/pane scroll position without changing how
+   wheel, trackpad, touch, or keyboard scrolling behaves. */
+.payvora-scrollbar {
+  position: fixed;
+  top: 0;
+  right: max(0px, env(safe-area-inset-right));
+  z-index: 60;
+  width: 8px;
+  height: 100vh;
+  height: 100dvh;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 0s linear 180ms;
+}
+
+.payvora-scrollbar--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.payvora-scrollbar-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-text) 6%, transparent);
+}
+
+.payvora-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: 4px;
+  min-height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-text) 28%, transparent);
+  cursor: grab;
+  touch-action: none;
+  transition: width 160ms ease, left 160ms ease, background-color 160ms ease;
+}
+
+.payvora-scrollbar:hover .payvora-scrollbar-thumb,
+.payvora-scrollbar-thumb--dragging {
+  left: 1px;
+  width: 6px;
+  background: color-mix(in srgb, var(--pv-text) 46%, transparent);
+}
+
+.payvora-scrollbar-thumb--dragging {
+  cursor: grabbing;
+}
+
+.payvora-scrollbar:focus-visible {
+  outline: 2px solid var(--pv-blue);
+  outline-offset: -1px;
+}
+
+.payvora-scrollbar-dragging,
+.payvora-scrollbar-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+@media (pointer: coarse) {
+  .payvora-scrollbar {
+    width: 10px;
+  }
+
+  .payvora-scrollbar-thumb {
+    left: 2px;
+    width: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payvora-scrollbar,
+  .payvora-scrollbar-thumb {
+    transition: none;
+  }
+}
+
+html {
+  overflow-x: hidden;
+  /* scroll-behavior applied only when motion is acceptable */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background-color: var(--pv-page);
+  color: var(--pv-text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+[role='button'] {
+  touch-action: manipulation;
+}
+
+button:not(:disabled):hover,
+[role='button']:hover {
+  filter: brightness(0.985);
+}
+
+button:not(:disabled):active,
+[role='button']:active {
+  transform: scale(0.98);
+}
+
+button:focus-visible,
+input:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--pv-blue);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.payvora-menu-item:hover,
+.payvora-menu-item:focus-visible {
+  background: var(--pv-hover) !important;
+  filter: none;
+}
+
+.payvora-side-item {
+  position: relative;
+}
+
+.payvora-side-item:hover:not(:disabled),
+.payvora-side-item:focus-visible:not(:disabled) {
+  background: var(--pv-hover) !important;
+}
+
+.payvora-side-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.payvora-sidebar-tooltip {
+  /* Default: absolute for any non-nav usage */
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 30;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(0, -50%);
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: #21232B;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+  font-size: 12px;
+  font-weight: 500;
+  animation: payvora-tooltip-in 140ms ease both;
+}
+
+/* Fixed variant used by SideItem inside scrollable nav — escapes overflow clip */
+.payvora-sidebar-tooltip--fixed {
+  position: fixed;
+  left: 72px;
+  top: 0; /* overridden by inline style */
+  z-index: 200;
+  transform: translateY(-50%);
+}
+
+.payvora-collapsed-utility {
+  position: relative;
+  overflow: visible;
+}
+
+.payvora-collapsed-utility::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 40;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translate(-4px, -50%);
+  opacity: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: #21232B;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+  font-size: 12px;
+  font-weight: 500;
+  transition: opacity 140ms ease 180ms, transform 140ms ease 180ms;
+}
+
+.payvora-collapsed-utility:hover::after,
+.payvora-collapsed-utility:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* Tooltip is now conditionally rendered; no separate :hover rule needed */
+
+@keyframes payvora-tooltip-in {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to   { opacity: 1; transform: translate(0,   -50%); }
+}
+
+/* Fixed variant entrance overrides translateY only */
+.payvora-sidebar-tooltip--fixed {
+  animation: payvora-tooltip-in-fixed 140ms ease both;
+}
+@keyframes payvora-tooltip-in-fixed {
+  from { opacity: 0; transform: translate(-4px, -50%); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+
+@keyframes payvora-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  /* ChatPanel's internal conversation list: hidden on phones — the app
+     sidebar "Recents" list covers conversation switching there. */
+  .chat-conv-aside {
+    display: none !important;
+  }
+
+  .payvora-main-scroll {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .payvora-studio-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .voice-studio-page .voice-studio-layout {
+    flex-wrap: wrap !important;
+  }
+
+  .voice-studio-page .voice-settings-column {
+    width: 100% !important;
+  }
+}
+
+/* ── Voice card grid — container queries (respond to actual column width) ── */
+/* The voice-selection-column div already carries container-type:inline-size
+   and container-name:voice-column via its inline style in TextToSpeech.tsx. */
+
+@container voice-column (max-width: 540px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@container voice-column (min-width: 541px) and (max-width: 760px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@container voice-column (min-width: 761px) and (max-width: 960px) {
+  .voice-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ≥ 961px: all five cards in a row (default inline style) */
+
+/* Spinner used by play buttons and async controls */
+@keyframes payvora-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── App shell — full-viewport height with mobile browser bar support ──────
+   100dvh (dynamic viewport height) shrinks when the browser's address bar is
+   visible on iOS/Android, preventing the classic "content cut off" problem.
+   100vh is the fallback for browsers that don't support dvh yet.             */
+.payvora-app {
+  height: 100vh;       /* fallback */
+  height: 100dvh;      /* iOS Safari 15.4+, Chrome 108+, Firefox 116+ */
+}
+
+/* ── Main content scroll container ──────────────────────────────────────── */
+/* scroll-padding-top accounts for the 56px sticky top bar so keyboard-focused
+   elements and in-page anchors are never obscured by the header.             */
+.payvora-main-scroll {
+  scroll-padding-top: 56px;
+  /* Smooth inertia scrolling on iOS/Android */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Focusable sections reveal themselves above the sticky header */
+.payvora-main-scroll :focus-visible {
+  scroll-margin-top: 72px;
+}
+
+/* ── Voice Studio app shell ──────────────────────────────────────────────── */
+.vs-app {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tabs bar: allow horizontal scroll on small screens; hide scrollbar (decorative) */
+.vs-tabs-bar {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.vs-tabs-bar::-webkit-scrollbar { display: none; }
+
+/* studio-tabs already hides its own scrollbar in its rule block */
+
+/* ── Two-column layout shared across Voice Studio pages ─────────────────── */
+.vs-two-col {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ── Right-hand side panels (VoiceClone 300px, MyVoices 240px) ──────────── */
+.vs-layout-side,
+.hist-details-panel {
+  flex-shrink: 0;
+}
+
+/* Header action buttons row */
+.vs-page-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── VoiceClone voice grid (default 4 col) ──────────────────────────────── */
+.vc-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── MyVoices voice grid (default 4 col) ────────────────────────────────── */
+.mv-voice-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Category bar: allow horizontal scroll instead of wrapping */
+.mv-category-bar {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mv-category-bar::-webkit-scrollbar { display: none; }
+
+/* ── History stats grid (default 5 col) ─────────────────────────────────── */
+.hist-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ── Responsive — collapse at ≤ 1024px ──────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hist-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Responsive — collapse at ≤ 900px ───────────────────────────────────── */
+@media (max-width: 900px) {
+  /* Stack two-col layouts */
+  .vs-two-col {
+    flex-direction: column;
+  }
+
+  /* Side panels become full-width */
+  .vs-layout-side,
+  .hist-details-panel {
+    width: 100% !important;
+  }
+
+  /* Drop voice grids to 3 columns */
+  .vc-voice-grid,
+  .mv-voice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Voice Studio two-col layout (TextToSpeech) */
+  .voice-studio-page .voice-studio-layout {
+    flex-wrap: wrap !important;
+  }
+  .voice-studio-page .voice-settings-column {
+    width: 100% !important;
+  }
+}
+
+/* ── Responsive — collapse at ≤ 640px ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .vc-voice-grid,
+  .mv-voice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hist-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hist-search-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Used by the chat view: pin the scroll container. */
+.studio-main-scroll {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* Uploaded voice-library page integration. The imported source remains
+   untouched; these are host-level styles for its one custom animation. */
+.imported-voice-page {
+  min-height: 100%;
+  color: #111827;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.imported-voice-page .wave-bar {
+  animation: imported-voice-pulse-wave 1.2s ease-in-out infinite;
+}
+
+@keyframes imported-voice-pulse-wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.6); }
+}
+
+@media (max-width: 760px) {
+  .imported-voice-page .max-w-6xl {
+    max-width: none;
+  }
+
+  .imported-voice-page .px-6 {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .imported-voice-page .flex.items-stretch.gap-3 {
+    flex-wrap: wrap;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Documents / Templates / Knowledge domain styles
+   ══════════════════════════════════════════════════════════════════════════ */
+@keyframes pv-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.tmpl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ds-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  height: calc(100vh - 128px);
+  min-height: 480px;
+}
+
+.ds-sidebar {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.ds-editor {
+  min-height: 0;
+}
+
+.ds-content:empty::before {
+  content: 'Start writing… use the toolbar to format, or ask the AI assistant to draft for you.';
+  color: var(--pv-text-muted);
+}
+.ds-content h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin: 0.4em 0; }
+.ds-content h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0.4em 0; }
+.ds-content ul, .ds-content ol { padding-left: 1.4em; }
+.ds-content p { margin: 0.6em 0; }
+
+@media (max-width: 760px) {
+  .tmpl-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .ds-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .ds-sidebar {
+    max-height: 360px;
+  }
+  .ds-editor {
+    min-height: 60vh;
+  }
+}
+
+/* ===== Billing / Settings / API Keys / Integrations / Shortcuts domain ===== */
+.pv-skel {
+  background: linear-gradient(90deg, var(--pv-hover) 25%, var(--pv-border) 37%, var(--pv-hover) 63%);
+  background-size: 400% 100%;
+  animation: pv-skel-shimmer 1.4s ease infinite;
+}
+@keyframes pv-skel-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (max-width: 760px) {
+  .settings-two-col,
+  .integrations-wh-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .billing-inv-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+.billing-inv-row > span:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Codex-inspired PAYVORA home shell ─────────────────────────────────── */
+.payvora-codex-app {
+  --pv-codex-rail: #f7f7f8;
+  --pv-codex-line: rgba(0, 0, 0, 0.09);
+  --pv-codex-muted: #8a8a8f;
+  --pv-codex-quiet: #f3f3f4;
+  --pv-codex-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
+  background: #fff !important;
+}
+
+:root[data-theme='dark'] .payvora-codex-app {
+  --pv-codex-rail: #202020;
+  --pv-codex-line: rgba(255, 255, 255, 0.11);
+  --pv-codex-muted: #a0a0a5;
+  --pv-codex-quiet: #2b2b2c;
+  --pv-codex-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 8px 24px rgba(0, 0, 0, 0.18);
+  background: #1a1a1a !important;
+}
+
+.payvora-codex-sidebar {
+  width: 322px !important;
+  max-width: min(322px, 88vw) !important;
+  background: var(--pv-codex-rail) !important;
+  border-right: 1px solid var(--pv-codex-line) !important;
+  box-shadow: 7px 0 20px rgba(0, 0, 0, 0.025);
+}
+
+.payvora-codex-sidebar[aria-hidden='true'] {
+  width: 0 !important;
+  max-width: 0 !important;
+  margin-left: 0 !important;
+  border-right-width: 0 !important;
+  overflow: hidden;
+}
+
+.payvora-codex-sidebar-brand {
+  min-height: 70px;
+  padding: 16px 12px 12px 28px !important;
+}
+
+.payvora-codex-sidebar-brand img {
+  width: 88px !important;
+  height: auto !important;
+  max-height: 58px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.payvora-codex-sidebar-utilities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.payvora-codex-sidebar-utilities > button {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+}
+
+.payvora-codex-sidebar-content {
+  padding: 4px 18px 92px !important;
+}
+
+.payvora-codex-sidebar .payvora-side-item {
+  gap: 12px !important;
+  min-height: 36px;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+  color: var(--pv-text-secondary) !important;
+  font-size: 16px !important;
+  font-weight: 450 !important;
+}
+
+.payvora-codex-sidebar .payvora-side-item:hover,
+.payvora-codex-sidebar .payvora-side-item:focus-visible {
+  background: rgba(0, 0, 0, 0.055) !important;
+}
+
+:root[data-theme='dark'] .payvora-codex-sidebar .payvora-side-item:hover,
+:root[data-theme='dark'] .payvora-codex-sidebar .payvora-side-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.payvora-codex-sidebar .payvora-side-item[aria-current='page'] {
+  background: transparent !important;
+  color: var(--pv-text) !important;
+  font-weight: 550 !important;
+}
+
+.payvora-codex-sidebar .payvora-side-item[aria-current='page'] > span:first-child {
+  color: var(--pv-text) !important;
+}
+
+.payvora-codex-sidebar .payvora-side-item[aria-current='page'] > span[aria-hidden] {
+  display: none;
+}
+
+.payvora-codex-sidebar .payvora-side-item + div {
+  margin-bottom: 10px;
+}
+
+.payvora-codex-sidebar p {
+  color: var(--pv-codex-muted) !important;
+}
+
+.payvora-codex-sidebar p[style*='font-size: 17px'] {
+  margin-top: 28px !important;
+  padding-left: 10px !important;
+  font-size: 15px !important;
+  font-weight: 560 !important;
+}
+
+.payvora-codex-accountbar {
+  border-top: 1px solid var(--pv-codex-line);
+  background: var(--pv-codex-rail) !important;
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom)) !important;
+}
+
+.payvora-codex-account-name {
+  max-width: 190px;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--pv-text);
+  cursor: pointer;
+  font: 500 14px/1.2 inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payvora-codex-main {
+  background: #fff !important;
+}
+
+:root[data-theme='dark'] .payvora-codex-main {
+  background: #1a1a1a !important;
+}
+
+.payvora-codex-header {
+  min-height: 58px;
+  padding: 10px 4px 10px 14px !important;
+}
+
+.payvora-codex-header > div:last-child > button,
+.payvora-codex-menu-toggle {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.payvora-codex-menu-toggle {
+  display: none !important;
+}
+
+.payvora-codex-sidebar[aria-hidden='true'] + .payvora-codex-main .payvora-codex-menu-toggle {
+  display: flex !important;
+}
+
+.payvora-codex-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payvora-codex-header-action {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+}
+
+.payvora-codex-header-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.payvora-codex-upgrade {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 18px;
+  padding: 7px 11px;
+  background: #f4ebff;
+  color: #8a4dff;
+  cursor: pointer;
+  font: 600 14px/1 inherit;
+}
+
+.payvora-codex-upgrade > span {
+  font-size: 16px;
+  line-height: 0;
+}
+
+:root[data-theme='dark'] .payvora-codex-upgrade {
+  background: rgba(158, 106, 255, 0.16);
+  color: #be9aff;
+}
+
+.pv-codex-home {
+  flex: 1;
+  min-height: 580px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding: 0 clamp(18px, 3vw, 44px) max(20px, env(safe-area-inset-bottom));
+}
+
+.pv-codex-hero {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(40px, 8vh, 98px) 0 clamp(44px, 7vh, 78px);
+  animation: pv-codex-enter 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 1161px) and (min-height: 800px) {
+  .pv-codex-hero {
+    position: relative;
+    top: clamp(72px, 9vh, 96px);
+  }
+}
+
+.pv-codex-mark {
+  margin-bottom: 26px;
+  color: #b4b5b9;
+}
+
+.pv-codex-hero h1 {
+  margin: 0;
+  color: var(--pv-text);
+  font-size: clamp(30px, 2.8vw, 36px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  transform: translateY(8px);
+}
+
+.pv-codex-prompts {
+  width: min(100%, 890px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 44px;
+}
+
+.pv-codex-prompt-card {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 1px solid var(--pv-codex-line);
+  border-radius: 18px;
+  padding: 19px 20px 17px;
+  background: var(--pv-card);
+  color: var(--pv-text);
+  box-shadow: var(--pv-codex-shadow);
+  cursor: pointer;
+  font: 540 16px/1.55 inherit;
+  letter-spacing: -0.01em;
+  text-align: left;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.pv-codex-prompt-card:hover,
+.pv-codex-prompt-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--pv-text) 18%, transparent);
+  box-shadow: 0 2px 4px rgba(0,0,0,.04), 0 12px 28px rgba(0,0,0,.07);
+  filter: none !important;
+}
+
+.pv-codex-prompt-icon {
+  display: inline-flex;
+  width: 21px;
+  height: 21px;
+  align-items: center;
+  justify-content: center;
+}
+.pv-codex-prompt-icon svg { width: 19px; height: 19px; }
+.pv-codex-prompt-icon--blue { color: #2486ff; }
+.pv-codex-prompt-icon--purple { color: #9c5cff; }
+.pv-codex-prompt-icon--green { color: #00a95d; }
+.pv-codex-prompt-icon--orange { color: #ef6500; }
+
+.pv-codex-composer-wrap {
+  width: min(100%, 904px);
+  margin: 0 auto;
+  animation: pv-codex-enter 480ms 60ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pv-codex-project-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 23px 23px 0 0;
+  background: var(--pv-codex-quiet);
+  color: var(--pv-codex-muted);
+  cursor: pointer;
+  font: 450 15px/1 inherit;
+}
+.pv-codex-project-picker svg { width: 18px; height: 18px; }
+
+.pv-codex-composer {
+  overflow: hidden;
+  border: 1px solid var(--pv-codex-line);
+  border-radius: 23px;
+  background: var(--pv-input-bg);
+  box-shadow: 0 3px 9px rgba(0,0,0,.06), 0 12px 34px rgba(0,0,0,.05);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.pv-codex-composer:focus-within {
+  border-color: color-mix(in srgb, var(--pv-blue) 45%, var(--pv-codex-line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pv-blue) 10%, transparent), 0 12px 34px rgba(0,0,0,.07);
+}
+
+.pv-codex-composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  max-height: 156px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  padding: 20px 22px 8px;
+  background: transparent;
+  color: var(--pv-text);
+  font: 400 17px/1.45 inherit;
+}
+.pv-codex-composer textarea::placeholder { color: #b8b9be; }
+
+.pv-codex-composer-controls {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  gap: 5px;
+  padding: 0 10px 10px 12px;
+  color: var(--pv-text-secondary);
+}
+
+.pv-codex-control-icon,
+.pv-codex-send {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pv-text-secondary);
+  cursor: pointer;
+}
+.pv-codex-control-icon:hover { background: var(--pv-hover); color: var(--pv-text); filter: none !important; }
+
+.pv-codex-access-control,
+.pv-codex-model-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--pv-text-secondary);
+  cursor: pointer;
+  font: 500 14px/1 inherit;
+}
+.pv-codex-access-control { color: #ed5a17; }
+.pv-codex-model-control span { color: var(--pv-codex-muted); font-weight: 400; }
+.pv-codex-control-spacer { flex: 1; }
+
+.pv-codex-send {
+  background: #96979a;
+  color: #fff;
+}
+.pv-codex-send:not(:disabled) { background: var(--pv-blue-strong); cursor: pointer; }
+.pv-codex-send:disabled { opacity: 1; }
+
+:root[data-theme='dark'] .pv-codex-prompt-card {
+  background: #1b1b1b;
+  border-color: #303030;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='dark'] .pv-codex-composer {
+  background: #2b2b2b;
+  border-color: #353535;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='dark'] .pv-codex-project-picker {
+  background: #202020;
+}
+
+@keyframes pv-codex-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1160px) {
+  .payvora-codex-sidebar { width: 292px !important; }
+  .pv-codex-prompts { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 520px; }
+}
+
+@media (max-width: 760px) {
+  .payvora-codex-sidebar { width: min(322px, 86vw) !important; }
+  .payvora-codex-sidebar[aria-hidden='true'] { width: min(322px, 86vw) !important; max-width: 86vw !important; }
+  .payvora-codex-menu-toggle { display: flex !important; }
+  .pv-codex-home { min-height: 100%; padding: 0 14px max(14px, env(safe-area-inset-bottom)); }
+  .pv-codex-hero { padding-top: 50px; padding-bottom: 40px; }
+  .pv-codex-mark { margin-bottom: 18px; transform: scale(.82); }
+  .pv-codex-hero h1 { font-size: 30px; text-align: center; }
+  .pv-codex-prompts { width: 100%; margin-top: 30px; gap: 10px; }
+  .pv-codex-prompt-card { min-height: 116px; padding: 15px; font-size: 14px; }
+  .pv-codex-model-control { display: none; }
+  .pv-codex-composer textarea { min-height: 58px; font-size: 16px; }
+}
+
+@media (max-width: 430px) {
+  .pv-codex-prompts { grid-template-columns: 1fr; }
+  .pv-codex-prompt-card { min-height: 82px; flex-direction: row; align-items: center; }
+  .pv-codex-hero { align-self: start; }
+  .pv-codex-access-control span { display: none; }
+}
+
