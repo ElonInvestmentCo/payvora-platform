@@ -1092,13 +1092,14 @@ button:disabled {
    ═══════════════════════════════════════════════════════════════════════ */
 .payvora-codex-sidebar {
   isolation: isolate;
-  overflow: visible;
-  background: linear-gradient(145deg, rgba(255,255,255,.20), rgba(255,255,255,.035) 54%, rgba(255,255,255,.12)) !important;
-  background-color: rgba(248,250,253,.56) !important;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.72), rgba(246,247,250,.60) 48%, rgba(238,240,245,.72)),
+    var(--pv-codex-rail) !important;
   border-right-color: color-mix(in srgb, var(--pv-text) 13%, transparent) !important;
-  box-shadow: inset -1px 0 rgba(255,255,255,.48), 8px 0 24px rgba(19,27,48,.025) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(118%);
-  backdrop-filter: blur(18px) saturate(118%);
+  box-shadow: inset -1px 0 rgba(255,255,255,.58), 10px 0 32px rgba(19, 27, 48, .045) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  backdrop-filter: blur(22px) saturate(135%);
 }
 
 .payvora-codex-sidebar::before {
@@ -1107,18 +1108,23 @@ button:disabled {
   z-index: -1;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,.20), transparent 22%, rgba(255,255,255,.06));
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--pv-blue) 11%, transparent), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.32), transparent 17%, rgba(255,255,255,.08));
 }
 
 :root[data-theme='dark'] .payvora-codex-sidebar {
-  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.012) 54%, rgba(0,0,0,.055)) !important;
-  background-color: rgba(25,27,33,.66) !important;
+  background:
+    linear-gradient(145deg, rgba(38,39,45,.82), rgba(28,29,34,.74) 48%, rgba(24,25,30,.86)),
+    var(--pv-codex-rail) !important;
   border-right-color: rgba(255,255,255,.105) !important;
-  box-shadow: inset -1px 0 rgba(255,255,255,.042), 8px 0 24px rgba(0,0,0,.11) !important;
+  box-shadow: inset -1px 0 rgba(255,255,255,.035), 10px 0 34px rgba(0,0,0,.17) !important;
 }
 
 :root[data-theme='dark'] .payvora-codex-sidebar::before {
-  background: linear-gradient(180deg, rgba(255,255,255,.038), transparent 24%, rgba(0,0,0,.055));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--pv-blue) 13%, transparent), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.042), transparent 22%, rgba(0,0,0,.075));
 }
 
 .payvora-codex-sidebar > * { position: relative; z-index: 1; }
@@ -1214,24 +1220,13 @@ button:disabled {
 
 .payvora-codex-accountbar {
   border-top-color: color-mix(in srgb, var(--pv-text) 9%, transparent) !important;
-  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.30)) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pv-page) 28%, transparent), color-mix(in srgb, var(--pv-codex-rail) 84%, transparent)) !important;
   box-shadow: inset 0 1px rgba(255,255,255,.20);
   -webkit-backdrop-filter: blur(15px) saturate(125%);
   backdrop-filter: blur(15px) saturate(125%);
 }
 
-:root[data-theme='dark'] .payvora-codex-accountbar {
-  background: linear-gradient(180deg, rgba(255,255,255,.012), rgba(0,0,0,.16)) !important;
-  box-shadow: inset 0 1px rgba(255,255,255,.04);
-}
-
-/* The header stays as the existing control anchor, but no longer creates a
-   separate visual band above the workspace. */
-.payvora-codex-header {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
+:root[data-theme='dark'] .payvora-codex-accountbar { box-shadow: inset 0 1px rgba(255,255,255,.04); }
 
 .payvora-codex-accountbar > div > div { padding: 5px 7px 5px 4px; border-radius: 11px; transition: background 180ms ease; }
 .payvora-codex-accountbar > div > div:hover { background: color-mix(in srgb, var(--pv-text) 6%, transparent); }
