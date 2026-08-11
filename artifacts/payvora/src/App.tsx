@@ -6,6 +6,7 @@ import ChatPanel from './chat/ChatPanel'
 import { useGlobalShortcuts } from './lib/shortcuts'
 import { useTheme } from './lib/theme'
 import { getJson } from './lib/http'
+import { BottomWorkspacePanel, RightWorkspacePanel, WorkspaceControls, type WorkspaceTool } from './components/WorkspaceControls'
 
 type SidebarConversation = { id: number; title: string; createdAt: string }
 
@@ -72,6 +73,9 @@ export default function App() {
   // Remount key for ChatPanel — bumped only when the user starts/opens a chat,
   // never when a new conversation id arrives mid-stream (that caused a re-send).
   const [chatSession, setChatSession] = useState(0)
+  const [bottomWorkspaceOpen, setBottomWorkspaceOpen] = useState(false)
+  const [rightWorkspaceOpen, setRightWorkspaceOpen] = useState(false)
+  const [workspaceTool, setWorkspaceTool] = useState<WorkspaceTool | null>(null)
   const chatMenuRef = useRef<HTMLDivElement>(null)
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
   const profileMenuRef = useRef<HTMLDivElement>(null)
@@ -147,6 +151,20 @@ export default function App() {
     }
   }, [chatMenuOpen])
 
+  useEffect(() => {
+    const closeWorkspaceWithEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (rightWorkspaceOpen) {
+        setRightWorkspaceOpen(false)
+        setWorkspaceTool(null)
+      } else if (bottomWorkspaceOpen) {
+        setBottomWorkspaceOpen(false)
+      }
+    }
+    document.addEventListener('keydown', closeWorkspaceWithEscape)
+    return () => document.removeEventListener('keydown', closeWorkspaceWithEscape)
+  }, [bottomWorkspaceOpen, rightWorkspaceOpen])
+
   const refreshSidebarConvos = () => {
     getJson<{ conversations: SidebarConversation[] }>('/chat/conversations')
       .then(data => setSidebarConvos(data.conversations.slice(0, 20)))
@@ -205,6 +223,17 @@ export default function App() {
   const toggleHomeMode = (mode: 'write') => {
     setHomeMode(current => (current === mode ? 'none' : mode))
     window.setTimeout(() => messageInputRef.current?.focus(), 60)
+  }
+  const toggleRightWorkspace = () => {
+    setRightWorkspaceOpen(open => {
+      const next = !open
+      if (next) setWorkspaceTool(null)
+      return next
+    })
+  }
+  const closeRightWorkspace = () => {
+    setRightWorkspaceOpen(false)
+    setWorkspaceTool(null)
   }
   useGlobalShortcuts({ onNewChat: startNewChat, onNavigate: label => navigateTo(label, false) })
 
@@ -395,18 +424,20 @@ export default function App() {
             </div>
           ) : (
             <div className="payvora-codex-header-actions">
-              <button type="button" className="payvora-codex-header-action" aria-label="Chat history" title="Open chat history" onClick={() => { setActiveConvId(null); setChatInitial(undefined); setChatOpen(true); navigateTo('AI Chat', false) }} style={pillIconBtn}>
-                <svg width="19" height="19" viewBox="0 0 20 20" fill="none"><rect x="3" y="4.2" width="14" height="11.6" rx="2.2" stroke="var(--pv-text)" strokeWidth="1.5"/><path d="M6.4 12.2h7.2" stroke="var(--pv-text)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              </button>
-              <button type="button" className="payvora-codex-header-action" aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'} aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(open => !open)} style={pillIconBtn}>
-                <svg width="19" height="19" viewBox="0 0 20 20" fill="none"><rect x="2.8" y="3.4" width="14.4" height="13.2" rx="2.4" stroke="var(--pv-text)" strokeWidth="1.5"/><path d="M7.2 4.8v10.4" stroke="var(--pv-text)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              </button>
+              <WorkspaceControls
+                bottomPanelOpen={bottomWorkspaceOpen}
+                rightPanelOpen={rightWorkspaceOpen}
+                onToggleBottomPanel={() => setBottomWorkspaceOpen(open => !open)}
+                onToggleRightPanel={toggleRightWorkspace}
+              />
             </div>
           )}
         </header>
 
-        {/* Body */}
-        <div className={chatOpen && activeNav === 'AI Chat' ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'}
+        <div className="payvora-workspace-stage">
+          <div className="payvora-workspace-content">
+            {/* Body */}
+            <div className={chatOpen && activeNav === 'AI Chat' ? 'payvora-main-scroll studio-main-scroll' : 'payvora-main-scroll'}
           data-payvora-scrollbar-root
           style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: isStudio || isRegistryLabel(activeNav) || (chatOpen && activeNav === 'AI Chat') ? 0 : 0, display: 'flex', flexDirection: 'column' }}>
           {activeNav === 'Voice Studio' ? (
@@ -436,7 +467,13 @@ export default function App() {
               onUnavailable={notify}
             />
           )}
+            </div>
+          </div>
+          {rightWorkspaceOpen && (
+            <RightWorkspacePanel activeTool={workspaceTool} onSelectTool={setWorkspaceTool} onClose={closeRightWorkspace} />
+          )}
         </div>
+        {bottomWorkspaceOpen && <BottomWorkspacePanel onClose={() => setBottomWorkspaceOpen(false)} />}
       </main>
 
       {interactionMessage && (
