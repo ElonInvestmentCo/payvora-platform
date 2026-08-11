@@ -257,7 +257,7 @@ export default function App() {
           borderRight: isMobile ? 'none' : '1px solid var(--pv-border)',
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-105%)',
           marginLeft: !isMobile && !sidebarOpen ? -SIDEBAR_W : 0,
-          borderRadius: isMobile ? '0 24px 24px 0' : 0,
+          borderRadius: isMobile ? '0 24px 24px 0' : '16px 0 0 16px',
           boxShadow: isMobile && sidebarOpen ? '0 0 60px rgba(0,0,0,0.35)' : 'none',
           transition: 'transform 360ms cubic-bezier(0.32, 0.72, 0, 1), margin-left 360ms cubic-bezier(0.32, 0.72, 0, 1)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -363,7 +363,7 @@ export default function App() {
               <button type="button" className="payvora-codex-account-name" onClick={() => setProfileOpen(v => !v)}>{displayName || 'Payvora workspace'}</button>
             </div>
               {profileOpen && (
-                <div role="menu" aria-label="Profile menu" style={{ position: 'absolute', zIndex: 40, left: -60, bottom: 52, width: 240, background: 'var(--pv-card)', border: '1px solid var(--pv-border)', borderRadius: 20, boxShadow: '0 16px 44px rgba(0,0,0,0.22)', padding: 8, animation: 'payvora-menu-in 220ms cubic-bezier(0.32,0.72,0,1)' }}>
+                <div role="menu" aria-label="Profile menu" style={{ position: 'absolute', zIndex: 40, left: 0, bottom: 52, width: 240, background: 'var(--pv-card)', border: '1px solid var(--pv-border)', borderRadius: 20, boxShadow: '0 16px 44px rgba(0,0,0,0.22)', padding: 8, animation: 'payvora-menu-in 220ms cubic-bezier(0.32,0.72,0,1)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 12px', borderBottom: '1px solid var(--pv-border)' }}>
                     <Avatar initials={initials} size={32} />
                     <div>
