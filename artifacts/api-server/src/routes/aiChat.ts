@@ -120,7 +120,8 @@ router.post("/chat/conversations/:id/messages", async (req, res) => {
       stream: true,
       stream_options: { include_usage: true },
       messages: aiMessages,
-    }, { signal: abort.signal });
+      signal: abort.signal,
+    });
     let usageTokens = 0;
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content ?? "";

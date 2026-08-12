@@ -145,8 +145,7 @@ router.post("/support/assistant", async (req, res) => {
   await db.insert(messagesTable).values({ conversationId: convo.id, role: "user", content });
 
   const history = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, convo.id)).orderBy(asc(messagesTable.id));
-  const aiMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-    { role: "system", content: SUPPORT_SYSTEM_PROMPT },
+  const aiMessages: Array<{ role: "user" | "assistant"; content: string }> = [
     ...history.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content } as const)),
   ];
 

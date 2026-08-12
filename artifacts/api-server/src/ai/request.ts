@@ -45,8 +45,13 @@ export async function createCanonicalChatCompletion(
     });
   }
 
-  return openai.chat.completions.create(
-    { ...providerRequest, messages: finalMessages } as never,
+  const createCompletion = openai.chat.completions.create as unknown as (
+    body: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
+  ) => Promise<any>;
+
+  return createCompletion(
+    { ...providerRequest, messages: finalMessages } as Record<string, unknown>,
     signal ? { signal } : undefined,
   );
 }
