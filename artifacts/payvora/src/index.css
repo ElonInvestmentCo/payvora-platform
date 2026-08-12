@@ -560,6 +560,220 @@ button:disabled {
   background: var(--pv-page) !important;
 }
 
+/* Voice Library visual alignment. The uploaded source is immutable; these
+   scoped host rules preserve its layout and behavior while reusing the Chat
+   shell's surfaces, hierarchy, borders, accent, and interaction states. */
+.imported-voice-page .text-gray-900 {
+  color: var(--pv-text) !important;
+}
+
+.imported-voice-page .text-gray-800 {
+  color: var(--pv-text-secondary) !important;
+}
+
+.imported-voice-page .text-gray-700,
+.imported-voice-page .text-gray-600 {
+  color: var(--pv-text-secondary) !important;
+}
+
+.imported-voice-page .text-gray-500,
+.imported-voice-page .text-gray-400 {
+  color: var(--pv-text-muted) !important;
+}
+
+.imported-voice-page [class~='bg-white'] {
+  background: var(--pv-card) !important;
+}
+
+.imported-voice-page [class~='bg-gray-100'] {
+  background: var(--pv-hover) !important;
+}
+
+.imported-voice-page [class~='bg-gray-200'] {
+  background: color-mix(in srgb, var(--pv-text) 10%, var(--pv-page)) !important;
+}
+
+.imported-voice-page [class~='border-gray-100'],
+.imported-voice-page [class~='border-gray-200'] {
+  border-color: var(--pv-border) !important;
+}
+
+/* Header: retain the imported hierarchy while using Chat surfaces and action
+   tokens for the title mark, credits card, and Create Voice CTA. */
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-start.gap-4 > div:first-child {
+  background: var(--pv-blue-soft) !important;
+  border-color: var(--pv-border) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > div.rounded-2xl.px-5.py-3 {
+  background: var(--pv-card-raised) !important;
+  border-color: var(--pv-border) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > div.rounded-2xl.px-5.py-3 > div > div {
+  background: var(--pv-blue-soft) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > div.rounded-2xl.px-5.py-3 button {
+  border-color: var(--pv-border) !important;
+  color: var(--pv-blue) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > button {
+  background: var(--pv-blue-strong) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > button:hover,
+.imported-voice-page .max-w-6xl > .flex.items-start.justify-between.mb-8 > .flex.items-stretch.gap-3 > button:focus-visible {
+  box-shadow: var(--pv-shadow) !important;
+  filter: brightness(1.06);
+}
+
+/* Tabs, search, and filters share the Chat input and pill language. */
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-0.border-b {
+  border-color: var(--pv-border) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-0.border-b button[style*='54, 126, 227'] {
+  color: var(--pv-blue) !important;
+  border-color: var(--pv-blue) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 input {
+  background: var(--pv-input-bg) !important;
+  border-color: var(--pv-border) !important;
+  color: var(--pv-text) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 input::placeholder {
+  color: var(--pv-text-muted) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 input:focus {
+  border-color: var(--pv-blue) !important;
+  box-shadow: 0 0 0 3px var(--pv-blue-soft) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 > button,
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-2.mb-6.overflow-x-auto > button {
+  background: var(--pv-card) !important;
+  border-color: var(--pv-border) !important;
+  color: var(--pv-text-secondary) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 > button:hover,
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-3.mb-4 > button:focus-visible,
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-2.mb-6.overflow-x-auto > button:hover,
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-2.mb-6.overflow-x-auto > button:focus-visible {
+  border-color: var(--pv-blue) !important;
+  color: var(--pv-blue) !important;
+  filter: none;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-2.mb-6.overflow-x-auto > div {
+  background: var(--pv-border) !important;
+}
+
+.imported-voice-page .max-w-6xl > .flex.items-center.gap-2.mb-6.overflow-x-auto > button[style*='box-shadow'] {
+  background: var(--pv-blue-strong) !important;
+  border-color: var(--pv-blue-strong) !important;
+  color: #fff !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+/* Promotion panel: retain the imported layout while making its surface part
+   of the same restrained card family as the Chat workspace. */
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 {
+  background: color-mix(in srgb, var(--pv-card) 92%, var(--pv-blue) 8%) !important;
+  border-color: var(--pv-border) !important;
+  box-shadow: var(--pv-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 > .w-28.h-24 {
+  background: var(--pv-blue-soft) !important;
+  border-color: var(--pv-border) !important;
+}
+
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 .wave-bar {
+  background: var(--pv-blue) !important;
+}
+
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 button {
+  background: var(--pv-blue-strong) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 button:hover,
+.imported-voice-page .max-w-6xl > .rounded-2xl.p-6.mb-8.flex.items-center.gap-6 button:focus-visible {
+  box-shadow: var(--pv-shadow) !important;
+  filter: brightness(1.06);
+}
+
+/* Voice cards: content and grid stay unchanged; surface contrast, hierarchy,
+   borders, hover elevation, and primary actions now match the Chat UI. */
+.imported-voice-page .max-w-6xl .grid.grid-cols-3.gap-4 > div {
+  background: var(--pv-card) !important;
+  border-color: var(--pv-border) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page .max-w-6xl .grid.grid-cols-3.gap-4 > div:hover {
+  border-color: color-mix(in srgb, var(--pv-blue) 42%, var(--pv-border)) !important;
+  box-shadow: var(--pv-shadow) !important;
+  transform: translateY(-1px);
+}
+
+.imported-voice-page .max-w-6xl .grid.grid-cols-3.gap-4 > div [class~='w-7'][class~='h-7'] {
+  background: var(--pv-blue-strong) !important;
+  box-shadow: var(--pv-pill-shadow);
+}
+
+.imported-voice-page .max-w-6xl .grid.grid-cols-3.gap-4 > div [class~='w-7'][class~='h-7']:hover,
+.imported-voice-page .max-w-6xl .grid.grid-cols-3.gap-4 > div [class~='w-7'][class~='h-7']:focus-visible {
+  filter: brightness(1.08);
+  box-shadow: var(--pv-shadow);
+}
+
+/* Player: preserve its fixed position and controls while replacing the
+   imported light surface with the current application surface. */
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] {
+  background: color-mix(in srgb, var(--pv-card) 94%, transparent) !important;
+  border-top-color: var(--pv-border) !important;
+  box-shadow: 0 -8px 28px color-mix(in srgb, var(--pv-text) 8%, transparent) !important;
+  color: var(--pv-text);
+}
+
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] [class~='w-10'][class~='h-10'] {
+  background: var(--pv-blue-strong) !important;
+  box-shadow: var(--pv-pill-shadow) !important;
+}
+
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] [class~='w-10'][class~='h-10']:hover,
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] [class~='w-10'][class~='h-10']:focus-visible {
+  box-shadow: var(--pv-shadow) !important;
+  filter: brightness(1.08);
+}
+
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] [class~='relative'][class~='w-24'][class~='h-1.5'] {
+  background: color-mix(in srgb, var(--pv-text) 14%, transparent) !important;
+}
+
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='left-0'][class~='right-0'] svg rect {
+  fill: var(--pv-text-muted) !important;
+  opacity: 0.62;
+}
+
+.imported-voice-page > .min-h-screen > [class~='fixed'][class~='bottom-0'][class~='right-0'] button:focus-visible,
+.imported-voice-page .max-w-6xl button:focus-visible {
+  outline: 2px solid var(--pv-blue) !important;
+  outline-offset: 2px;
+}
+
 .imported-voice-page .wave-bar {
   animation: imported-voice-pulse-wave 1.2s ease-in-out infinite;
 }
