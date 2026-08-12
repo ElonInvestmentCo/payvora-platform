@@ -4,14 +4,14 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/payvora run dev` — run the Payvora web app through its managed artifact workflow
-- `pnpm --filter @workspace/api-server run dev` — run the API server
+- `pnpm --filter @workspace/payvora run dev` — run the Payvora web app (requires `PORT=23441 BASE_PATH=/`)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (requires `PORT=8080`)
 - `pnpm --filter @workspace/mockup-sandbox run dev` — run the component preview server
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- The managed web workflow provides `PORT` and `BASE_PATH` to Vite.
+- The configured `Payvora web` and `Payvora API` workflows provide the required ports; Vite also proxies `/api` to the API workflow in standalone development.
 - The API server requires the workspace's configured database environment when database-backed routes are used.
 
 ## Stack
@@ -36,7 +36,7 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 - Payvora remains a pnpm workspace and keeps the imported React + Vite structure intact.
 - The sidebar uses one navigation configuration; collapsed mode filters it to essential controls rather than duplicating navigation.
 - Voice Studio keeps its existing visual card design and uses CSS grid sizing for equal five-card desktop rows with responsive fallbacks.
-- Artifact-managed workflows supply preview routing and runtime ports; do not configure replacement workflows for these services.
+- When artifact-managed workflows are present, they supply preview routing and runtime ports; this imported Repl currently uses the configured `Payvora web` and `Payvora API` workflows instead.
 
 ## Product
 

@@ -544,6 +544,109 @@ button:disabled {
   padding: 0 !important;
 }
 
+/* Image generation state — the card is intentionally scoped to chat so the
+   approved shell, composer, and other pages remain unchanged. */
+.pv-image-generation-card {
+  width: min(100%, 584px);
+  min-height: 360px;
+  aspect-ratio: 1.42;
+  overflow: hidden;
+  position: relative;
+  border-radius: 28px;
+  padding: 30px 28px;
+  background: #2b2b2b;
+  color: #e7e7e9;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+  animation: pv-image-card-in 280ms ease-out both;
+}
+
+.pv-image-generation-status {
+  min-height: 24px;
+  color: #dedee1;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  animation: pv-image-status-in 220ms ease-out both;
+}
+
+.pv-image-dot-field {
+  width: 72%;
+  height: 72%;
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  grid-auto-rows: minmax(8px, 1fr);
+  align-content: start;
+  margin-top: 16px;
+  opacity: .9;
+}
+
+.pv-image-dot {
+  width: 4px;
+  height: 4px;
+  align-self: center;
+  justify-self: center;
+  border-radius: 50%;
+  background: rgba(224, 224, 229, .84);
+  opacity: var(--pv-dot-opacity, .35);
+  animation: pv-image-dot-drift 4.8s ease-in-out infinite;
+  animation-delay: var(--pv-dot-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+.pv-image-generation-card--completed {
+  padding: 0;
+  background: #2b2b2b;
+}
+
+.pv-generated-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  object-fit: cover;
+  animation: pv-image-result-in 360ms ease-out both;
+}
+
+.pv-generated-image-message {
+  width: min(100%, 584px);
+}
+
+@keyframes pv-image-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pv-image-status-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pv-image-dot-drift {
+  0%, 100% { opacity: calc(var(--pv-dot-opacity, .35) * .62); transform: translate3d(0, 0, 0) scale(.78); }
+  50% { opacity: 1; transform: translate3d(var(--pv-dot-shift-x, 0), var(--pv-dot-shift-y, 0), 0) scale(1.08); }
+}
+
+@keyframes pv-image-result-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .pv-image-generation-card {
+    min-height: 270px;
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .pv-image-generation-status {
+    font-size: 16px;
+  }
+
+  .pv-generated-image {
+    min-height: 270px;
+  }
+}
+
 /* Uploaded voice-library page integration. The imported source remains
    untouched; these are host-level styles for its one custom animation. */
 .imported-voice-page {

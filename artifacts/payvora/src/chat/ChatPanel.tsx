@@ -3,6 +3,24 @@ import { api, getJson, sendJson } from "../lib/http";
 
 type Conversation = { id: number; title: string; createdAt: string };
 type Message = { id: number; role: string; content: string; createdAt: string };
+type GeneratedImage = { prompt: string; dataUrl: string };
+type ImageGenerationState = { phase: "generating" | "sketching" | "completed"; prompt: string; dataUrl?: string };
+
+const GENERATED_IMAGE_PREFIX = "__PAYVORA_GENERATED_IMAGE__:";
+
+const isImageGenerationPrompt = (content: string): boolean =>
+  /\b(?:generate|create|make|draw|illustrate|render|paint|design)\b[\s\S]{0,100}\b(?:image|picture|photo|illustration|artwork|visual)\b|\b(?:image|picture|photo|illustration|artwork|visual)\b[\s\S]{0,100}\b(?:generate|create|make|draw|illustrate|render|paint)\b/i.test(content);
+
+function decodeGeneratedImage(content: string): GeneratedImage | null {
+  if (!content.startsWith(GENERATED_IMAGE_PREFIX)) return null;
+  try {
+    const value = JSON.parse(content.slice(GENERATED_IMAGE_PREFIX.length)) as Partial<GeneratedImage>;
+    if (typeof value.prompt === "string" && typeof value.dataUrl === "string" && value.dataUrl.startsWith("data:image/")) return value as GeneratedImage;
+  } catch {
+    /* Keep malformed historical messages visible as ordinary text. */
+  }
+  return null;
+}
 
 type Props = {
   activeConversationId?: number | null;
@@ -26,6 +44,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [imageGeneration, setImageGeneration] = useState<ImageGenerationState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingConvos, setLoadingConvos] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -91,6 +110,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
   const send = useCallback(async (forced?: string) => {
     const content = (forced ?? input).trim();
     if (!content || streaming) return;
+    const imageRequest = isImageGenerationPrompt(content);
     setError(null);
     setInput("");
     let id: number;
@@ -104,9 +124,11 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
     setMessages(prev => [...prev, userMsg]);
     setStreaming(true);
     setStreamText("");
+    if (imageRequest) setImageGeneration({ phase: "generating", prompt: content });
     const controller = new AbortController();
     abortRef.current = controller;
     let assembled = "";
+    let generatedImage: GeneratedImage | null = null;
     try {
       const res = await fetch(api(`/chat/conversations/${id}/messages`), {
         method: "POST",
@@ -134,16 +156,39 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
           if (!line.startsWith("data:")) continue;
           const payload = line.slice(5).trim();
           try {
-            const obj = JSON.parse(payload) as { content?: string; done?: boolean; error?: string };
+            const obj = JSON.parse(payload) as {
+              content?: string;
+              done?: boolean;
+              error?: string;
+              status?: "generating" | "sketching";
+              image?: GeneratedImage;
+            };
             if (obj.error) throw new Error(obj.error);
+            if (obj.status && imageRequest) {
+              setImageGeneration(current => current ? { ...current, phase: obj.status! } : current);
+            }
+            if (obj.image?.dataUrl && imageRequest) {
+              generatedImage = obj.image;
+              setImageGeneration(current => current ? { ...current, phase: "completed", dataUrl: obj.image!.dataUrl } : current);
+            }
             if (obj.content) { assembled += obj.content; setStreamText(assembled); }
           } catch (err) {
             if (err instanceof Error && err.message !== "Unexpected end of JSON input") throw err;
           }
         }
       }
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: assembled, createdAt: new Date().toISOString() }]);
+      if (generatedImage) {
+        setMessages(prev => [...prev, {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: `${GENERATED_IMAGE_PREFIX}${JSON.stringify(generatedImage)}`,
+          createdAt: new Date().toISOString(),
+        }]);
+      } else if (assembled) {
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: assembled, createdAt: new Date().toISOString() }]);
+      }
       setStreamText("");
+      setImageGeneration(null);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         if (assembled) setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: assembled + " …(stopped)", createdAt: new Date().toISOString() }]);
@@ -151,6 +196,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
         setError(e instanceof Error ? e.message : "AI request failed.");
       }
       setStreamText("");
+      setImageGeneration(null);
     } finally {
       setStreaming(false);
       abortRef.current = null;
@@ -172,7 +218,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const newChat = () => { if (streaming) return; setConvId(null); setMessages([]); setError(null); };
+  const newChat = () => { if (streaming) return; setConvId(null); setMessages([]); setError(null); setImageGeneration(null); };
 
   const rename = async (id: number) => {
     const current = conversations.find(c => c.id === id)?.title ?? "";
@@ -225,7 +271,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
         <div ref={scrollRef} data-payvora-scrollbar-root style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           {loadingMsgs ? (
             [0, 1, 2].map(i => <div key={i} style={skeleton(48)} />)
-          ) : messages.length === 0 && !streamText ? (
+          ) : messages.length === 0 && !streamText && !imageGeneration ? (
             <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8, color: MUTED }}>
               <p style={{ fontSize: 18, fontWeight: 600, color: TEXT, letterSpacing: "-0.01em" }}>Start a conversation</p>
               <p style={{ fontSize: 13 }}>Ask anything — Payvora's assistant streams responses in real time.</p>
@@ -234,6 +280,7 @@ export default function ChatPanel({ activeConversationId = null, onConversationC
             <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
               {messages.map(m => <Bubble key={m.id} role={m.role} content={m.content} />)}
               {streamText && <Bubble role="assistant" content={streamText} streaming />}
+               {imageGeneration && <ImageGenerationCard key="image-generation" phase={imageGeneration.phase} prompt={imageGeneration.prompt} dataUrl={imageGeneration.dataUrl} />}
             </div>
           )}
         </div>
@@ -294,6 +341,8 @@ function Bubble({ role, content, streaming }: { role: string; content: string; s
       </div>
     );
   }
+  const generatedImage = decodeGeneratedImage(content);
+  if (generatedImage) return <GeneratedImageBubble image={generatedImage} />;
   // Reference style: assistant replies are plain text, with an action row underneath
   return (
     <div>
@@ -311,6 +360,47 @@ function Bubble({ role, content, streaming }: { role: string; content: string; s
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+const IMAGE_DOTS = Array.from({ length: 140 }, (_, index) => index);
+
+function ImageGenerationCard({ phase, prompt, dataUrl }: { phase: ImageGenerationState["phase"]; prompt: string; dataUrl?: string }) {
+  const status = phase === "sketching" ? "Sketching it out" : "Creating image";
+  return (
+    <div className={`pv-image-generation-card${dataUrl ? " pv-image-generation-card--completed" : ""}`} role="status" aria-label={dataUrl ? "Generated image" : `${status} for ${prompt}`}>
+      {dataUrl ? (
+        <img className="pv-generated-image" src={dataUrl} alt={prompt} />
+      ) : (
+        <>
+          <div className="pv-image-generation-status" key={status}>{status}</div>
+          <div className="pv-image-dot-field" aria-hidden="true">
+            {IMAGE_DOTS.map(index => (
+              <span
+                key={index}
+                className="pv-image-dot"
+                style={{
+                  "--pv-dot-delay": `${(index % 17) * -110}ms`,
+                  "--pv-dot-opacity": `${0.2 + ((index * 13) % 7) * 0.08}`,
+                  "--pv-dot-shift-x": `${((index * 7) % 9) - 4}px`,
+                  "--pv-dot-shift-y": `${((index * 11) % 7) - 3}px`,
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function GeneratedImageBubble({ image }: { image: GeneratedImage }) {
+  return (
+    <div className="pv-generated-image-message">
+      <div className="pv-image-generation-card pv-image-generation-card--completed" role="img" aria-label={`Generated image: ${image.prompt}`}>
+        <img className="pv-generated-image" src={image.dataUrl} alt={image.prompt} />
+      </div>
     </div>
   );
 }
