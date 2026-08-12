@@ -1,4 +1,3 @@
-import { openai } from "@workspace/integrations-openai-ai-server";
 import {
   CANONICAL_SYSTEM_PROMPT,
   CANONICAL_SYSTEM_PROMPT_VERSION,
@@ -11,7 +10,7 @@ import {
 export { buildCanonicalMessages };
 export type { RequestMessage };
 
-type CompletionRequest = {
+export type CompletionRequest = {
   model: string;
   messages: readonly RequestMessage[];
   path: string;
@@ -23,6 +22,11 @@ type CompletionRequest = {
   signal?: AbortSignal;
 };
 
+export type CompletionCreate = (
+  body: Record<string, unknown>,
+  options?: { signal?: AbortSignal },
+) => Promise<any>;
+
 /**
  * The only text-model request entry point used by the API server.
  * `messages` is intentionally not accepted from the browser directly; routes
@@ -30,6 +34,7 @@ type CompletionRequest = {
  */
 export async function createCanonicalChatCompletion(
   request: CompletionRequest,
+  providerCreate?: CompletionCreate,
 ): Promise<any> {
   const { path, signal, messages, ...providerRequest } = request;
   const finalMessages = buildCanonicalMessages(messages);
@@ -45,10 +50,12 @@ export async function createCanonicalChatCompletion(
     });
   }
 
-  const createCompletion = openai.chat.completions.create as unknown as (
-    body: Record<string, unknown>,
-    options?: { signal?: AbortSignal },
-  ) => Promise<any>;
+  const createCompletion =
+    providerCreate ??
+    (async (body: Record<string, unknown>, options?: { signal?: AbortSignal }) => {
+      const { openai } = await import("@workspace/integrations-openai-ai-server");
+      return (openai.chat.completions.create as unknown as CompletionCreate)(body, options);
+    });
 
   return createCompletion(
     { ...providerRequest, messages: finalMessages } as Record<string, unknown>,
