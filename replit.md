@@ -12,7 +12,7 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- The managed `artifacts/payvora: web` and `artifacts/api-server: API Server` workflows provide supported preview routing and ports; Vite also proxies `/api` to the API workflow in standalone development.
+- The configured `Payvora web` and `Payvora API` workflows provide preview routing on the supported `5173` and `8080` ports; use the root Preview URL (without `:5173`) because the Replit preview router owns the external URL.
 - The API server requires the workspace's configured database environment when database-backed routes are used.
 
 ## Stack
@@ -37,7 +37,7 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 - Payvora remains a pnpm workspace and keeps the imported React + Vite structure intact.
 - The sidebar uses one navigation configuration; collapsed mode filters it to essential controls rather than duplicating navigation.
 - Voice Studio keeps its existing visual card design and uses CSS grid sizing for equal five-card desktop rows with responsive fallbacks.
-- Payvora uses the artifact-managed web/API workflows so preview routing stays connected to the supported `5173` web port and `8080` API port.
+- Payvora uses the configured web/API workflows so the Vite server stays pinned to the supported internal `5173` port and the API stays on `8080`.
 
 ## Product
 
@@ -52,8 +52,8 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 
 ## Gotchas
 
-- Run Vite builds with `PORT` and `BASE_PATH` set, or use the managed artifact workflow.
-- Restart an affected artifact workflow after dependency or runtime changes.
+- Run Vite builds with `PORT` and `BASE_PATH` set, or use the configured `Payvora web` workflow.
+- Open the root Preview URL rather than a direct `:5173` URL; restart the affected workflow after dependency or runtime changes.
 - Keep the uploaded Payvora and Voice Studio reference designs intact unless a request explicitly asks for a visual redesign.
 
 ## Pointers

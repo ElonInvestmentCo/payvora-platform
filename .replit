@@ -42,7 +42,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=5173 BASE_PATH=/ pnpm --filter @workspace/payvora run dev"
+args = "PORT=5173 BASE_PATH=/ pnpm --filter @workspace/payvora run dev -- --port 5173 --strictPort"
 waitForPort = 5173
 
 [workflows.workflow.metadata]
