@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db, conversations, messages as messagesTable, supportTicketsTable, supportMessagesTable } from "@workspace/db";
 import { and, asc, desc, eq } from "drizzle-orm";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { sessionOwner, errorMessage } from "../lib/session";
 import { recordUsage } from "../lib/usage";
+import { createCanonicalChatCompletion } from "../ai/request";
 
 const router: IRouter = Router();
 
@@ -81,7 +81,7 @@ const ARTICLES: Array<{ slug: string; title: string; category: string; summary: 
   },
 ];
 
-const SUPPORT_SYSTEM_PROMPT = `You are Payvora's support assistant. You help users understand and use Payvora, an AI content workspace with these REAL capabilities:
+const SUPPORT_TASK_CONTEXT = `You are Payvora's support assistant. You help users understand and use Payvora, an AI content workspace with these REAL capabilities:
 - Voice Studio: zero-shot voice cloning via an F5-TTS worker. Controls: speed, pitch, energy, and [pause:seconds] tags. It does NOT support stability, similarity, emotion, or non-speech vocal events.
 - Document Studio: AI-assisted rich-text documents with folders, favorites, and version history.
 - AI Agents: configurable assistants (models gpt-5.6-terra, gpt-5.6-luna, gpt-5-mini), system prompts, optional memory, and knowledge attachment. Some tool permissions are reserved and not yet executable.
@@ -157,12 +157,13 @@ router.post("/support/assistant", async (req, res) => {
 
   let assembled = "";
   try {
-    const stream = await openai.chat.completions.create({
+    const stream = await createCanonicalChatCompletion({
+      path: "/api/support/assistant",
       model: "gpt-5.6-terra",
       max_completion_tokens: 8192,
       stream: true,
       stream_options: { include_usage: true },
-      messages: aiMessages,
+      messages: [{ role: "system", content: SUPPORT_TASK_CONTEXT }, ...aiMessages],
     });
     let usageTokens = 0;
     for await (const chunk of stream) {

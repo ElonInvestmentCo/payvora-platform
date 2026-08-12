@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, documentsTable, documentFoldersTable, documentVersionsTable, type Document, type DocumentFolder, type DocumentVersion } from "@workspace/db";
 import { sessionOwner, errorMessage } from "../lib/session";
 import { recordUsage } from "../lib/usage";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { createCanonicalChatCompletion } from "../ai/request";
 import { and, eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -237,7 +237,8 @@ router.post("/documents/ai", async (req, res) => {
   res.flushHeaders?.();
   let chars = 0;
   try {
-    const stream = await openai.chat.completions.create({
+    const stream = await createCanonicalChatCompletion({
+      path: "/api/documents/ai",
       model: AI_MODEL,
       max_completion_tokens: 8192,
       stream: true,

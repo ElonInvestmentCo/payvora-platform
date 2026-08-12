@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db, conversations, messages as messagesTable } from "@workspace/db";
 import { and, asc, desc, eq } from "drizzle-orm";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { sessionOwner, errorMessage } from "../lib/session";
 import { recordUsage } from "../lib/usage";
+import { createCanonicalChatCompletion } from "../ai/request";
 
 const router: IRouter = Router();
 
@@ -98,8 +98,7 @@ router.post("/chat/conversations/:id/messages", async (req, res) => {
   }
 
   const history = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id)).orderBy(asc(messagesTable.id));
-  const aiMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-    { role: "system", content: "You are Payvora's AI assistant. Be helpful, concise, and accurate. If you do not know something, say so." },
+  const aiMessages: Array<{ role: "user" | "assistant"; content: string }> = [
     ...history.map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content } as const)),
   ];
 
@@ -114,7 +113,8 @@ router.post("/chat/conversations/:id/messages", async (req, res) => {
   const abort = new AbortController();
   res.on("close", () => { if (!res.writableEnded) abort.abort(); });
   try {
-    const stream = await openai.chat.completions.create({
+    const stream = await createCanonicalChatCompletion({
+      path: "/api/chat/conversations/:id/messages",
       model: "gpt-5.6-terra",
       max_completion_tokens: 8192,
       stream: true,

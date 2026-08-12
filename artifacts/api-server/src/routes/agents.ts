@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db, agentsTable, agentLogsTable, knowledgeSourcesTable } from "@workspace/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { sessionOwner, errorMessage } from "../lib/session";
 import { recordUsage } from "../lib/usage";
+import { createCanonicalChatCompletion } from "../ai/request";
 
 const router: IRouter = Router();
 
@@ -175,7 +175,8 @@ router.post("/agents/:id/playground", async (req, res) => {
 
   let assembled = "";
   try {
-    const stream = await openai.chat.completions.create({
+    const stream = await createCanonicalChatCompletion({
+      path: "/api/agents/:id/run",
       model: agent.model,
       max_completion_tokens: 8192,
       stream: true,
