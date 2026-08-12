@@ -704,9 +704,9 @@ button:disabled {
 }
 
 .payvora-codex-sidebar-brand img {
-  width: 88px !important;
+  width: 176px !important;
   height: auto !important;
-  max-height: 58px;
+  max-height: 88px;
   object-fit: contain;
   object-position: left center;
 }

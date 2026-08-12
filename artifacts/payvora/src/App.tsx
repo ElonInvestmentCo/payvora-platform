@@ -268,7 +268,7 @@ export default function App() {
           <img
             src={`${import.meta.env.BASE_URL}${resolved === 'dark' ? 'payvora-dark-logo.png' : 'payvora-light-logo.png'}`}
             alt="Payvora"
-            style={{ width: 132, height: 'auto', display: 'block' }}
+            style={{ width: 176, height: 'auto', display: 'block' }}
           />
           <div className="payvora-codex-sidebar-utilities">
             <button type="button" aria-label={searchOpen ? 'Close search' : 'Search chats'} aria-expanded={searchOpen} onClick={() => setSearchOpen(v => !v)}
