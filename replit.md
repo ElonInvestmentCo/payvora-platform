@@ -4,6 +4,7 @@ Payvora is a fintech-inspired AI workspace with chat, voice, image, and video cr
 
 ## Run & Operate
 
+- After importing or restoring the workspace, run `pnpm install --frozen-lockfile`; initialize the development database with `pnpm --filter @workspace/db run push` before using database-backed chat routes.
 - `pnpm --filter @workspace/payvora run dev` — run the Payvora web app (requires `PORT=23441 BASE_PATH=/`)
 - `pnpm --filter @workspace/api-server run dev` — run the API server (requires `PORT=8080`)
 - `pnpm --filter @workspace/mockup-sandbox run dev` — run the component preview server
