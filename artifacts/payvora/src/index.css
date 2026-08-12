@@ -548,8 +548,16 @@ button:disabled {
    untouched; these are host-level styles for its one custom animation. */
 .imported-voice-page {
   min-height: 100%;
-  color: #111827;
+  background: var(--pv-page);
+  color: var(--pv-text);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* The uploaded page owns an inline light background. Override that host
+   surface without editing the immutable imported source, so it follows the
+   exact same page token as New Chat in both themes. */
+.imported-voice-page > .min-h-screen {
+  background: var(--pv-page) !important;
 }
 
 .imported-voice-page .wave-bar {
