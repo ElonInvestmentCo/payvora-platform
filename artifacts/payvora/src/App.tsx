@@ -6,6 +6,7 @@ import ChatPanel from './chat/ChatPanel'
 import { useGlobalShortcuts } from './lib/shortcuts'
 import { useTheme } from './lib/theme'
 import { getJson } from './lib/http'
+import { transcribeAudio } from './voice-studio/api'
 import { BottomWorkspacePanel, RightWorkspacePanel, WorkspaceControls, type WorkspaceTool } from './components/WorkspaceControls'
 
 type SidebarConversation = { id: number; title: string; createdAt: string }
@@ -66,6 +67,12 @@ export default function App() {
   const [sidebarConvos, setSidebarConvos] = useState<SidebarConversation[]>([])
   const [displayName, setDisplayName] = useState('')
   const [planName, setPlanName] = useState('')
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const recordingStreamRef = useRef<MediaStream | null>(null)
+  const recordingChunksRef = useRef<BlobPart[]>([])
+  const recordingFailedRef = useRef(false)
   // Home composer mode: expandable panel like the reference ("Write or edit")
   const [homeMode, setHomeMode] = useState<'none' | 'write'>('none')
   const [composerFocused, setComposerFocused] = useState(false)
@@ -185,6 +192,111 @@ export default function App() {
     setInteractionMessage(label)
     window.setTimeout(() => setInteractionMessage(current => current === label ? '' : current), 2_400)
   }
+  const stopRecordingStream = () => {
+    recordingStreamRef.current?.getTracks().forEach(track => track.stop())
+    recordingStreamRef.current = null
+  }
+  const handleComposerVoiceInput = async () => {
+    if (isTranscribing) return
+    if (isRecording) {
+      recorderRef.current?.stop()
+      return
+    }
+    if (!window.isSecureContext) {
+      notify('Microphone access requires a secure connection.')
+      return
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      notify('Microphone input is unavailable in this browser.')
+      return
+    }
+    if (typeof MediaRecorder === 'undefined') {
+      notify('Microphone recording is unavailable in this browser.')
+      return
+    }
+
+    const supportedMimeType = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+    ].find(type => MediaRecorder.isTypeSupported(type)) ?? ''
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      recordingStreamRef.current = stream
+      const recorder = supportedMimeType
+        ? new MediaRecorder(stream, { mimeType: supportedMimeType })
+        : new MediaRecorder(stream)
+      const chunks: BlobPart[] = []
+      recordingFailedRef.current = false
+      recordingChunksRef.current = chunks
+      recorderRef.current = recorder
+
+      recorder.ondataavailable = event => {
+        if (event.data.size > 0) chunks.push(event.data)
+      }
+      recorder.onerror = () => {
+        recordingFailedRef.current = true
+        recorderRef.current = null
+        stopRecordingStream()
+        setIsRecording(false)
+        notify('Microphone recording failed.')
+      }
+      recorder.onstop = async () => {
+        recorderRef.current = null
+        stopRecordingStream()
+        setIsRecording(false)
+        if (recordingFailedRef.current) return
+        if (chunks.length === 0) {
+          notify('No microphone audio was recorded.')
+          return
+        }
+
+        const mimeType = recorder.mimeType || supportedMimeType || 'audio/webm'
+        const extension = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'mp4' : 'webm'
+        const file = new File([new Blob(chunks, { type: mimeType })], `payvora-dictation.${extension}`, { type: mimeType })
+        setIsTranscribing(true)
+        notify('Transcribing microphone audio…')
+        try {
+          const transcript = (await transcribeAudio(file)).trim()
+          if (!transcript) {
+            notify('No speech was detected.')
+            return
+          }
+          setMessage(current => current.trim() ? `${current.trim()} ${transcript}` : transcript)
+          notify('Transcript added to the composer.')
+        } catch (error) {
+          notify(error instanceof Error ? `Transcription failed: ${error.message}` : 'Transcription failed.')
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+
+      recorder.start()
+      setIsRecording(true)
+      notify('Listening… Click the microphone again to stop.')
+    } catch (error) {
+      stopRecordingStream()
+      const name = error instanceof DOMException ? error.name : ''
+      const message = name === 'NotAllowedError'
+        ? 'Microphone permission was denied.'
+        : name === 'NotFoundError'
+          ? 'No microphone was found.'
+          : name === 'NotReadableError'
+            ? 'The microphone could not be accessed.'
+            : name === 'SecurityError'
+              ? 'Microphone access was blocked by browser security policy.'
+              : error instanceof Error
+                ? `Microphone access failed: ${error.message}`
+                : 'Microphone access failed.'
+      notify(message)
+    }
+  }
+  useEffect(() => () => {
+    try { recorderRef.current?.stop() } catch {}
+    stopRecordingStream()
+  }, [])
   const navigateTo = (label: string, announce = true) => {
     setActiveNav(label)
     if (isMobile) setSidebarOpen(false)
@@ -465,6 +577,7 @@ export default function App() {
                 window.requestAnimationFrame(() => messageInputRef.current?.focus())
               }}
               onUnavailable={notify}
+              onVoiceInput={() => { void handleComposerVoiceInput() }}
             />
           )}
             </div>
@@ -494,9 +607,10 @@ type CodexHomeProps = {
   onSubmit: () => void
   onPrompt: (prompt: string) => void
   onUnavailable: (message: string) => void
+  onVoiceInput: () => void
 }
 
-function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onPrompt, onUnavailable }: CodexHomeProps) {
+function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onPrompt, onUnavailable, onVoiceInput }: CodexHomeProps) {
   const prompts = [
     { label: 'Explore and\nunderstand code', prompt: 'Help me explore and understand this project.', tone: 'blue', icon: <GlobeIcon /> },
     { label: 'Build a new feature,\napp, or tool', prompt: 'Help me build a new feature for PAYVORA.', tone: 'purple', icon: <PencilIcon /> },
@@ -552,7 +666,7 @@ function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onProm
               PAYVORA AI <span>Balanced</span>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 5.5L8 10.5l5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
-            <button type="button" className="pv-codex-control-icon" aria-label="Voice input" onClick={() => onUnavailable('Voice input is not available yet.')}>
+            <button type="button" className="pv-codex-control-icon" aria-label="Voice input" onClick={onVoiceInput}>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="5.2" y="1.2" width="5.6" height="8.4" rx="2.8" stroke="currentColor" strokeWidth="1.5"/><path d="M2.8 8a5.2 5.2 0 0010.4 0M8 13.5V15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             </button>
             <button type="submit" className="pv-codex-send" aria-label="Send message" disabled={!message.trim()}>
