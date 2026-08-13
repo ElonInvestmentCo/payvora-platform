@@ -21,6 +21,7 @@ export type RealtimeServerMessage =
   | { type: 'response.started' }
   | { type: 'response.text.delta'; delta: string }
   | { type: 'response.text.completed'; text: string }
+  | { type: 'response.audio'; data: string }
   | { type: 'response.ended' }
   | { type: 'error'; code?: string; message: string }
 
@@ -45,7 +46,7 @@ export async function attachRealtimeWsServer(server: HttpServer) {
   // Shared voice engine instance (server-side orchestration)
   const engine = new VoiceEngineService({ realtime: providerInstance ?? undefined });
 
-  wss.on('connection', (ws, _req) => {
+  wss.on('connection', (ws: any, _req: any) => {
     let sessionId: string | null = null
 
     function sendJson(msg: RealtimeServerMessage) {
@@ -92,7 +93,7 @@ export async function attachRealtimeWsServer(server: HttpServer) {
       return
     }
 
-    ws.on('message', async (data) => {
+    ws.on('message', async (data: any) => {
       try {
         if (typeof data === 'string') {
           let payload: RealtimeClientMessage
@@ -156,9 +157,14 @@ export async function attachRealtimeWsServer(server: HttpServer) {
       if (sessionId) {
         engine.endVoiceSession(sessionId).catch(() => {})
       }
-      engine.off('transcription.completed', onTranscriptionCompleted as any)
-      engine.off('tts.started', onTtsStarted as any)
-      engine.off('tts.completed', onTtsCompleted as any)
+      // remove the same listeners we registered above
+      engine.off('speech.partial', onSpeechPartial as any)
+      engine.off('speech.final', onSpeechFinal as any)
+      engine.off('response.started', onResponseStarted as any)
+      engine.off('response.text.delta', onResponseTextDelta as any)
+      engine.off('response.text.completed', onResponseTextCompleted as any)
+      engine.off('response.audio', onResponseAudio as any)
+      engine.off('response.ended', onResponseEnded as any)
     })
   })
 

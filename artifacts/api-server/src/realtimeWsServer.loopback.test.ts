@@ -2,10 +2,10 @@ import { createServer } from 'http'
 import WebSocket from 'ws'
 import { attachRealtimeWsServer } from './realtimeWsServer'
 
-async function waitForMessage(ws: WebSocket, timeout = 3000): Promise<any> {
+async function waitForMessage(ws: any, timeout = 3000): Promise<any> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => { reject(new Error('timeout')) }, timeout)
-    ws.once('message', (data) => {
+    ws.once('message', (data: any) => {
       clearTimeout(t)
       try { resolve(JSON.parse(data.toString())) } catch { resolve(data.toString()) }
     })
@@ -19,10 +19,10 @@ async function run() {
   await new Promise<void>((r) => server.listen(0, () => r()))
   const port = (server.address() as any).port
   const url = `ws://127.0.0.1:${port}/api/realtime/voice`
-  const ws = new WebSocket(url)
+  const ws: any = new WebSocket(url)
   await new Promise<void>((resolve, reject) => {
     ws.on('open', () => resolve())
-    ws.on('error', (err) => reject(err))
+    ws.on('error', (err: any) => reject(err))
   })
 
   // Start a session

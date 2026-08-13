@@ -25,8 +25,8 @@ test('realtime ws returns provider_not_configured when env missing', async () =>
   const url = `ws://127.0.0.1:${port}/api/realtime/voice`
   const ws = new WebSocket(url)
   const msg = await new Promise<any>((resolve, reject) => {
-    ws.on('message', (data) => { try { resolve(JSON.parse(data.toString())) } catch (e) { reject(e) } })
-    ws.on('error', (err) => reject(err))
+    ws.on('message', (data: any) => { try { resolve(JSON.parse(data.toString())) } catch (e) { reject(e) } })
+    ws.on('error', (err: any) => reject(err))
     setTimeout(() => reject(new Error('timeout waiting for message')), 3000)
   })
   assert.strictEqual(msg.type, 'error')
