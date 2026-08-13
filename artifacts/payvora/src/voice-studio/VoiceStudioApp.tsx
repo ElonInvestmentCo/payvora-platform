@@ -5,6 +5,8 @@ import TextToSpeech from './pages/TextToSpeech'
 import VoiceClone   from './pages/VoiceClone'
 import MyVoices     from './pages/MyVoices'
 import History      from './pages/History'
+import VoiceWaveform from '../VoiceWaveform'
+import { VoiceEngineProvider } from '../voiceEngineContext'
 
 const TABS = [
   { id: 'text-to-speech', label: 'Text to Speech' },
@@ -28,6 +30,12 @@ export default function App() {
             <h1 style={{ fontSize: 20, fontWeight: 700, color: C.black, margin: 0, lineHeight: 1.3 }}>Voice Studio</h1>
             <p style={{ fontSize: 13, color: C.textGray, margin: 0 }}>Create natural, human-like speech using advanced AI voices</p>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 24px 0' }}>
+          <VoiceEngineProvider>
+            <VoiceWaveform />
+          </VoiceEngineProvider>
         </div>
 
         {/* Tabs */}

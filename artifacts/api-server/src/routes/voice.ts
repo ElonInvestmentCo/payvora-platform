@@ -3,11 +3,13 @@ import { db, userSettingsTable } from "@workspace/db";
 import { sessionOwner, errorMessage } from "../lib/session";
 import { eq } from "drizzle-orm";
 import { validateAndNormalizeReference, transcodeAudio, isSupportedFormat, isSupportedSampleRate, formatMime } from "../voice/audio";
+import { normalizeTranscriptionAudio } from "../voice/transcription";
 import { GenerationManager } from "../voice/manager";
 import { listTags } from "../voice/tags/registry";
 import { parseTaggedText, TagParseError } from "../voice/tags/parser";
 import { F5TtsClient } from "../voice/f5tts/client";
 import { DbVoiceStorage } from "../voice/dbStorage";
+import Busboy from 'busboy';
 
 const router: IRouter = Router();
 const storage = new DbVoiceStorage();
@@ -246,6 +248,70 @@ router.post("/audio/transcribe", async (req, res) => {
     res.json({ text });
   } catch (error) {
     res.status(503).json({ message: errorMessage(error, "Transcription is unavailable.") });
+  }
+});
+
+// New route supporting multipart/form-data as well as raw audio uploads.
+import Busboy from 'busboy';
+
+router.post('/voice/transcribe', async (req, res) => {
+  const contentType = String(req.headers['content-type'] ?? '');
+  try {
+    let buffer: Buffer | null = null;
+    const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+
+    if (contentType.startsWith('multipart/form-data')) {
+      // Parse multipart with Busboy and collect the "file" field into memory
+      const bb = new Busboy({ headers: req.headers, limits: { fileSize: MAX_BYTES } });
+      let finished = false;
+      let aborted = false;
+      buffer = null;
+      await new Promise<void>((resolve, reject) => {
+        bb.on('file', (_fieldname, stream, filename, encoding, mimetype) => {
+          const chunks: Buffer[] = [];
+          let total = 0;
+          stream.on('data', (chunk: Buffer) => {
+            total += chunk.length;
+            if (total > MAX_BYTES) {
+              aborted = true;
+              stream.resume();
+              bb.emit('error', new Error('File too large'));
+              return;
+            }
+            chunks.push(Buffer.from(chunk));
+          });
+          stream.on('end', () => {
+            buffer = Buffer.concat(chunks);
+          });
+        });
+        bb.on('error', err => { aborted = true; reject(err); });
+        bb.on('finish', () => { finished = true; resolve(); });
+        req.pipe(bb);
+      });
+      if (aborted) return void res.status(413).json({ message: 'Uploaded file is too large.' });
+    } else if (contentType.startsWith('audio/') || req.is('application/octet-stream')) {
+      if (!Buffer.isBuffer(req.body)) return void res.status(415).json({ message: 'Send raw audio bytes with an audio content type.' });
+      buffer = req.body as Buffer;
+      if (buffer.length > 20 * 1024 * 1024) return void res.status(413).json({ message: 'Uploaded file is too large.' });
+    } else {
+      return void res.status(415).json({ message: 'Unsupported content type. Send multipart/form-data with field "file" or raw audio bytes.' });
+    }
+
+    if (!buffer || buffer.length === 0) return void res.status(400).json({ message: 'No audio file provided.' });
+
+    // Normalize/validate for transcription (STT) and transcribe using provider
+    const audio = await normalizeTranscriptionAudio(buffer);
+    const client = new F5TtsClient();
+    const transcript = await client.transcribe(audio);
+    res.json({ transcript });
+  } catch (error) {
+    if ((error as any)?.message?.includes('File too large') || (error as any)?.code === 'LIMIT_FILE_SIZE') {
+      return void res.status(413).json({ message: 'Uploaded file is too large.' });
+    }
+    // Map known worker-unavailable errors to 503
+    if (error instanceof Error && error.name === 'F5TtsUnavailableError') return void res.status(503).json({ message: error.message });
+    console.error('Transcription error', error instanceof Error ? error.message : error);
+    res.status(502).json({ message: errorMessage(error, 'Transcription failed.') });
   }
 });
 
