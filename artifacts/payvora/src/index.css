@@ -1753,6 +1753,40 @@ button:disabled {
 .payvora-browser-address button:hover:not(:disabled) { background: color-mix(in srgb, var(--pv-text) 8%, transparent); color: var(--pv-text); }
 .payvora-browser-address button:disabled { opacity: .35; cursor: default; }
 .payvora-browser-address input { min-width: 0; flex: 1; height: 34px; border: 1px solid color-mix(in srgb, var(--pv-text) 13%, transparent); border-radius: 9px; background: transparent; color: var(--pv-text); padding: 0 10px; font: 400 14px/1 inherit; }
+.payvora-browser-frame { position: relative; display: flex; flex: 1; min-height: 230px; flex-direction: column; overflow: hidden; background: var(--pv-card); }
+.payvora-browser-frame-status { display: flex; align-items: center; gap: 7px; min-height: 30px; padding: 0 14px; color: var(--pv-text-muted); font-size: 11px; border-bottom: 1px solid var(--pv-codex-line); }
+.payvora-browser-frame-status button { margin-left: auto; border: 0; background: transparent; color: var(--pv-blue); cursor: pointer; font: 600 11px/1 inherit; }
+.payvora-browser-frame iframe { display: block; flex: 1; width: 100%; min-height: 230px; border: 0; background: #fff; }
+.payvora-browser-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pv-text-muted); }
+.payvora-browser-status-dot.is-loading { background: #f59e0b; animation: payvora-browser-pulse 1s ease-in-out infinite; }
+.payvora-browser-status-dot.is-loaded { background: #22c55e; }
+.payvora-browser-suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 10px; }
+.payvora-browser-suggestions button, .payvora-browser-quick-actions button { border: 1px solid color-mix(in srgb, var(--pv-text) 11%, transparent); border-radius: 999px; background: var(--pv-card-raised); color: var(--pv-text-secondary); cursor: pointer; font: 500 12px/1 inherit; }
+.payvora-browser-suggestions button { padding: 7px 10px; }
+.payvora-browser-suggestions button:hover, .payvora-browser-quick-actions button:hover { color: var(--pv-text); border-color: color-mix(in srgb, var(--pv-blue) 45%, transparent); }
+.payvora-browser-assistant { flex: 0 0 auto; border-top: 1px solid var(--pv-codex-line); background: var(--pv-card); }
+.payvora-browser-assistant-toggle { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 55px; padding: 9px 16px; border: 0; background: transparent; color: var(--pv-text); cursor: pointer; text-align: left; }
+.payvora-browser-assistant-toggle > span:nth-child(2) { display: grid; gap: 2px; min-width: 0; }
+.payvora-browser-assistant-toggle strong { font-size: 13px; font-weight: 650; }
+.payvora-browser-assistant-toggle small { color: var(--pv-text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.payvora-browser-ai-mark { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 9px; background: var(--pv-blue-soft); color: var(--pv-blue); }
+.payvora-browser-assistant-chevron { margin-left: auto; color: var(--pv-text-muted); font-size: 18px; }
+.payvora-browser-assistant-body { display: grid; gap: 8px; padding: 0 14px 13px; }
+.payvora-browser-quick-actions { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 1px; }
+.payvora-browser-quick-actions button { flex: 0 0 auto; padding: 6px 8px; white-space: nowrap; }
+.payvora-browser-quick-actions button:disabled { opacity: .4; cursor: not-allowed; }
+.payvora-browser-assistant-body textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 46px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--pv-text) 12%, transparent); border-radius: 9px; outline: none; background: var(--pv-input-bg); color: var(--pv-text); font: 400 12px/1.4 inherit; }
+.payvora-browser-assistant-body textarea:focus, .payvora-browser-ai-composer:focus-within { border-color: color-mix(in srgb, var(--pv-blue) 65%, transparent); }
+.payvora-browser-ai-thread { display: grid; gap: 6px; max-height: 120px; overflow-y: auto; font-size: 12px; line-height: 1.45; }
+.payvora-browser-ai-message { padding: 7px 9px; border-radius: 9px; white-space: pre-wrap; }
+.payvora-browser-ai-message.is-user { justify-self: end; max-width: 88%; background: var(--pv-hover); color: var(--pv-text); }
+.payvora-browser-ai-message.is-assistant { background: var(--pv-blue-soft); color: var(--pv-text); }
+.payvora-browser-ai-error { margin: 0; color: #dc2626; font-size: 11px; }
+.payvora-browser-ai-composer { display: flex; align-items: center; gap: 6px; padding: 4px 5px 4px 10px; border: 1px solid color-mix(in srgb, var(--pv-text) 12%, transparent); border-radius: 10px; background: var(--pv-input-bg); }
+.payvora-browser-ai-composer input { min-width: 0; flex: 1; height: 28px; border: 0; outline: 0; background: transparent; color: var(--pv-text); font: 400 13px/1 inherit; }
+.payvora-browser-ai-composer button { display: grid; width: 27px; height: 27px; place-items: center; border: 0; border-radius: 8px; background: var(--pv-blue); color: #fff; cursor: pointer; font-size: 16px; }
+.payvora-browser-ai-composer button:disabled { opacity: .4; cursor: not-allowed; }
+@keyframes payvora-browser-pulse { 50% { opacity: .35; } }
 
 .payvora-files-surface { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 .payvora-files-header { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 0 18px; border-bottom: 1px solid var(--pv-codex-line); font-size: 16px; }

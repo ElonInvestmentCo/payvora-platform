@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { api, sendJson } from '../lib/http'
 
 export type WorkspaceTool = 'review' | 'terminal' | 'browser' | 'files'
 
@@ -153,25 +154,203 @@ function WorkspaceToolSurface({ tool, onBack, onClose }: { tool: WorkspaceTool; 
       )}
       {tool === 'terminal' && <TerminalSurface />}
       {tool === 'browser' && (
-        <div className="payvora-browser-surface">
-          <form className="payvora-browser-address" onSubmit={event => { event.preventDefault(); setOpenedAddress(address.trim()) }}>
-            <button type="button" aria-label="Back" disabled>‹</button>
-            <button type="button" aria-label="Forward" disabled>›</button>
-            <button type="button" aria-label="Refresh" onClick={() => setOpenedAddress('')}>↻</button>
-            <input aria-label="Enter a URL" placeholder="Enter a URL" value={address} onChange={event => setAddress(event.target.value)} />
-            <button type="submit" aria-label="Open URL">↗</button>
-          </form>
-          <div className="payvora-workspace-empty">
-            <BrowserIcon />
-            <strong>{openedAddress ? 'Ready to browse' : 'Start browsing'}</strong>
-            <span>{openedAddress || 'Enter a URL to open a page'}</span>
-          </div>
-        </div>
+        <BrowserSurface />
       )}
       {tool === 'files' && <FilesSurface />}
       {tool !== 'review' && (
         <button type="button" className="payvora-workspace-back" onClick={onBack}>Open Review</button>
       )}
+    </div>
+  )
+}
+
+type BrowserMessage = { role: 'user' | 'assistant'; content: string }
+
+function BrowserSurface() {
+  const [address, setAddress] = useState('')
+  const [currentUrl, setCurrentUrl] = useState('')
+  const [history, setHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [pageState, setPageState] = useState<'empty' | 'loading' | 'loaded'>('empty')
+  const [pageContext, setPageContext] = useState('')
+  const [assistantOpen, setAssistantOpen] = useState(true)
+  const [question, setQuestion] = useState('')
+  const [messages, setMessages] = useState<BrowserMessage[]>([])
+  const [streaming, setStreaming] = useState(false)
+  const [assistantError, setAssistantError] = useState('')
+  const [conversationId, setConversationId] = useState<number | null>(null)
+
+  const normalizeUrl = (value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    if (/^https?:\/\//i.test(trimmed)) return trimmed
+    if (/^[\w-]+(\.[\w-]+)+([/?#].*)?$/i.test(trimmed)) return `https://${trimmed}`
+    return `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`
+  }
+
+  const openUrl = (value: string, replace = false) => {
+    const nextUrl = normalizeUrl(value)
+    if (!nextUrl) return
+    setAddress(nextUrl)
+    setCurrentUrl(nextUrl)
+    setPageState('loading')
+    if (replace) {
+      setHistory(current => current.map((url, index) => index === historyIndex ? nextUrl : url))
+    } else {
+      setHistory(current => [...current.slice(0, historyIndex + 1), nextUrl])
+      setHistoryIndex(current => current + 1)
+    }
+  }
+
+  const moveHistory = (direction: -1 | 1) => {
+    const nextIndex = historyIndex + direction
+    const nextUrl = history[nextIndex]
+    if (!nextUrl) return
+    setHistoryIndex(nextIndex)
+    setAddress(nextUrl)
+    setCurrentUrl(nextUrl)
+    setPageState('loading')
+  }
+
+  const ask = async (forcedQuestion?: string) => {
+    const prompt = (forcedQuestion ?? question).trim()
+    if (!prompt || streaming || !currentUrl) return
+    setQuestion('')
+    setStreaming(true)
+    setAssistantError('')
+    const context = pageContext.trim()
+      ? `\n\nUser-provided page text:\n${pageContext.trim().slice(0, 12000)}`
+      : '\n\nNo page text was provided. Do not claim to have read the page; explain that the embedded page is isolated when page-specific details are requested.'
+    const content = `I am browsing ${currentUrl}. Help me with this request: ${prompt}${context}`
+    setMessages(current => [...current, { role: 'user', content: prompt }])
+    let id = conversationId
+    let assembled = ''
+    try {
+      if (id == null) {
+        const conversation = await sendJson<{ id: number }>('/chat/conversations', 'POST', { title: `Browser: ${new URL(currentUrl).hostname}` })
+        id = conversation.id
+        setConversationId(id)
+      }
+      const response = await fetch(api(`/chat/conversations/${id}/messages`), {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      })
+      if (!response.ok || !response.body) {
+        let message = `PAYVORA AI request failed (${response.status}).`
+        try {
+          const body = await response.json() as { message?: string }
+          if (body.message) message = body.message
+        } catch {
+          /* Keep the status-based message. */
+        }
+        throw new Error(message)
+      }
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() ?? ''
+        for (const part of parts) {
+          const line = part.trim()
+          if (!line.startsWith('data:')) continue
+          const payload = JSON.parse(line.slice(5).trim()) as { content?: string; error?: string }
+          if (payload.error) throw new Error(payload.error)
+          if (payload.content) assembled += payload.content
+          setMessages(current => {
+            const last = current.at(-1)
+            if (last?.role === 'assistant') return [...current.slice(0, -1), { role: 'assistant', content: assembled }]
+            return [...current, { role: 'assistant', content: assembled }]
+          })
+        }
+      }
+      if (!assembled) throw new Error('PAYVORA AI did not return a message.')
+    } catch (error) {
+      setAssistantError(error instanceof Error ? error.message : 'PAYVORA AI is unavailable.')
+    } finally {
+      setStreaming(false)
+    }
+  }
+
+  return (
+    <div className="payvora-browser-surface">
+      <form className="payvora-browser-address" onSubmit={event => { event.preventDefault(); openUrl(address) }}>
+        <button type="button" aria-label="Back" disabled={historyIndex <= 0} onClick={() => moveHistory(-1)}>‹</button>
+        <button type="button" aria-label="Forward" disabled={historyIndex < 0 || historyIndex >= history.length - 1} onClick={() => moveHistory(1)}>›</button>
+        <button type="button" aria-label="Refresh" disabled={!currentUrl} onClick={() => { setPageState('loading'); setReloadKey(value => value + 1) }}>↻</button>
+        <input aria-label="Enter a URL" placeholder="Enter a URL or search" value={address} onChange={event => setAddress(event.target.value)} />
+        <button type="submit" aria-label="Open URL">↗</button>
+      </form>
+
+      <div className={`payvora-browser-frame${currentUrl ? ' has-page' : ''}`}>
+        {currentUrl ? (
+          <>
+            <div className="payvora-browser-frame-status" role="status">
+              <span className={`payvora-browser-status-dot is-${pageState}`} aria-hidden />
+              {pageState === 'loading' ? 'Loading page…' : 'Page loaded'}
+              <button type="button" onClick={() => window.open(currentUrl, '_blank', 'noopener,noreferrer')}>Open in new tab</button>
+            </div>
+            <iframe
+              key={`${currentUrl}-${reloadKey}`}
+              title={`PAYVORA browser: ${currentUrl}`}
+              src={currentUrl}
+              referrerPolicy="strict-origin-when-cross-origin"
+              onLoad={() => setPageState('loaded')}
+            />
+          </>
+        ) : (
+          <div className="payvora-workspace-empty">
+            <BrowserIcon />
+            <strong>Start browsing</strong>
+            <span>Enter a URL or search above to open a page</span>
+            <div className="payvora-browser-suggestions">
+              {['https://developer.mozilla.org', 'https://wikipedia.org'].map(url => (
+                <button type="button" key={url} onClick={() => openUrl(url)}>{url.replace('https://', '')}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <section className={`payvora-browser-assistant${assistantOpen ? ' is-open' : ''}`} aria-label="PAYVORA AI browser assistant">
+        <button type="button" className="payvora-browser-assistant-toggle" aria-expanded={assistantOpen} onClick={() => setAssistantOpen(open => !open)}>
+          <span className="payvora-browser-ai-mark" aria-hidden>✦</span>
+          <span><strong>Ask PAYVORA AI</strong><small>{currentUrl ? 'Use the page as your working context' : 'Open a page to start'}</small></span>
+          <span className="payvora-browser-assistant-chevron" aria-hidden>{assistantOpen ? '⌄' : '⌃'}</span>
+        </button>
+        {assistantOpen && (
+          <div className="payvora-browser-assistant-body">
+            <div className="payvora-browser-quick-actions">
+              {['Summarize this page', 'Explain the key points', 'Draft a reply'].map(prompt => (
+                <button type="button" key={prompt} disabled={!currentUrl || streaming} onClick={() => void ask(prompt)}>{prompt}</button>
+              ))}
+            </div>
+            <textarea
+              aria-label="Page text for PAYVORA AI"
+              value={pageContext}
+              onChange={event => setPageContext(event.target.value)}
+              placeholder="Paste page text here for page-specific answers (cross-site pages are isolated for privacy)."
+              rows={2}
+            />
+            {messages.length > 0 && (
+              <div className="payvora-browser-ai-thread" aria-live="polite">
+                {messages.slice(-4).map((message, index) => <div key={`${message.role}-${index}`} className={`payvora-browser-ai-message is-${message.role}`}>{message.content}</div>)}
+              </div>
+            )}
+            {assistantError && <p className="payvora-browser-ai-error" role="alert">{assistantError}</p>}
+            <form className="payvora-browser-ai-composer" onSubmit={event => { event.preventDefault(); void ask() }}>
+              <input aria-label="Ask PAYVORA AI about this page" value={question} onChange={event => setQuestion(event.target.value)} placeholder={currentUrl ? 'Ask about this page…' : 'Open a page first'} disabled={!currentUrl || streaming} />
+              <button type="submit" aria-label="Send question" disabled={!currentUrl || !question.trim() || streaming}>↑</button>
+            </form>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
