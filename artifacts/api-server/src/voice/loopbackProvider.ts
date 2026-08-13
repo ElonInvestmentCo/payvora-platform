@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "node:crypto";
 import type { RealtimeVoiceProvider } from './providers';
 
 /**
@@ -15,7 +15,7 @@ export class LoopbackRealtimeProvider extends EventEmitter implements RealtimeVo
   private sessions: Map<string, { createdAt: number; timers: NodeJS.Timeout[] }> = new Map()
 
   async createSession(_options?: Record<string, unknown>): Promise<string> {
-    const id = uuidv4()
+    const id = randomUUID()
     this.sessions.set(id, { createdAt: Date.now(), timers: [] })
 
     // Emit nothing immediately — caller (engine) will receive sessions and

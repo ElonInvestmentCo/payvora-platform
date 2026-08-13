@@ -330,7 +330,6 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
   }
 
   useEffect(() => {
-    setIsListening(state === 'listening')
     setIsSpeaking(state === 'speaking')
     setIsThinking(state === 'thinking')
   }, [state])

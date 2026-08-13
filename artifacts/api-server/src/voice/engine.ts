@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "node:crypto";
 import type { SpeechToTextProvider, RealtimeVoiceProvider, TextToSpeechProvider } from './providers';
 
 export type VoiceState =
@@ -74,7 +74,7 @@ export class VoiceEngineService extends EventEmitter {
   async startVoiceSession(options?: Record<string, unknown>): Promise<VoiceSessionInfo> {
     if (!this.realtimeProvider || !this.realtimeProvider.configured) {
       // Still create a logical session for local orchestration even if realtime absent.
-      const id = uuidv4();
+      const id = randomUUID();
       const session: VoiceSessionInfo = { id, state: 'listening', createdAt: Date.now() };
       this.sessions.set(id, session);
       this.emit('session.created', session);
@@ -82,7 +82,7 @@ export class VoiceEngineService extends EventEmitter {
     }
     this.setState('connecting');
     const providerSessionId = await this.realtimeProvider.createSession(options);
-    const id = uuidv4();
+    const id = randomUUID();
     const session: VoiceSessionInfo = { id, state: 'listening', createdAt: Date.now(), provider: providerSessionId };
     this.sessions.set(id, session);
 
