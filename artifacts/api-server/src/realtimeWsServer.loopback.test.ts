@@ -15,7 +15,7 @@ async function waitForMessage(ws: any, timeout = 3000): Promise<any> {
 async function run() {
   process.env['REALTIME_PROVIDER'] = 'loopback'
   const server = createServer()
-  const wss = attachRealtimeWsServer(server)
+  const wss = await attachRealtimeWsServer(server)
   await new Promise<void>((r) => server.listen(0, () => r()))
   const port = (server.address() as any).port
   const url = `ws://127.0.0.1:${port}/api/realtime/voice`

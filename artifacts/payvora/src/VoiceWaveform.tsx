@@ -1,15 +1,16 @@
-// VoiceWaveform.tsx removed: UI work is out of scope for the current Voice Engine backend-only task.
-// This file was previously added but is intentionally disabled to respect the requirement
-// that no UI or composer changes should be made during backend Voice Engine work.
-
 import { useEffect, useRef, useState } from 'react'
 import { useVoiceEngine } from './voiceEngineContext'
 
-export default function VoiceWaveform() {
+type VoiceWaveformProps = {
+  variant?: 'standalone' | 'composer'
+}
+
+export default function VoiceWaveform({ variant = 'standalone' }: VoiceWaveformProps) {
   const engine = useVoiceEngine()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const [animating, setAnimating] = useState(false)
+  const active = engine.isListening || engine.isSpeaking || engine.isThinking
 
   useEffect(() => {
     function render() {
@@ -28,22 +29,14 @@ export default function VoiceWaveform() {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        // choose analyser based on state (input during listening, output during speaking)
+        // Use the authoritative analyser from the voice engine. Composer mode
+        // only renders microphone input, never a simulated or placeholder line.
         const analyser = engine.isSpeaking && engine.outputAnalyser ? engine.outputAnalyser : engine.inputAnalyser
-        if (!analyser) {
-          // idle placeholder
-          ctx.fillStyle = 'rgba(0,0,0,0.04)'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
-          ctx.fillStyle = 'rgba(0,0,0,0.16)'
-          const mid = canvas.height / 2
-          ctx.fillRect(0, mid - 1, canvas.width, 2)
-        } else {
+        if (analyser) {
           const buf = new Uint8Array(analyser.frequencyBinCount)
           analyser.getByteTimeDomainData(buf)
           const len = buf.length
           const step = Math.max(1, Math.floor(len / canvas.width))
-          ctx.fillStyle = 'rgba(0,0,0,0.04)'
-          ctx.fillRect(0, 0, canvas.width, canvas.height)
           ctx.lineWidth = 1.5 * (window.devicePixelRatio || 1)
           ctx.strokeStyle = engine.isSpeaking ? '#06b6d4' : '#0b74ff'
           ctx.beginPath()
@@ -72,9 +65,8 @@ export default function VoiceWaveform() {
   }, [animating, engine.isSpeaking, engine.inputAnalyser, engine.outputAnalyser])
 
   useEffect(() => {
-    // start animating when listening or speaking
-    setAnimating(engine.isListening || engine.isSpeaking || engine.isThinking)
-  }, [engine.isListening, engine.isSpeaking, engine.isThinking])
+    setAnimating(active)
+  }, [active])
 
   const onStart = async () => {
     try {
@@ -89,6 +81,15 @@ export default function VoiceWaveform() {
     setAnimating(false)
   }
   const onInterrupt = async () => { await engine.interrupt() }
+
+  if (variant === 'composer') {
+    if (!active) return null
+    return (
+      <div aria-label="Live microphone waveform" style={{ height: 28, margin: '0 16px 2px', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 12 }}>

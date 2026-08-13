@@ -6,7 +6,6 @@ import VoiceClone   from './pages/VoiceClone'
 import MyVoices     from './pages/MyVoices'
 import History      from './pages/History'
 import VoiceWaveform from '../VoiceWaveform'
-import { VoiceEngineProvider } from '../voiceEngineContext'
 
 const TABS = [
   { id: 'text-to-speech', label: 'Text to Speech' },
@@ -33,9 +32,7 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 24px 0' }}>
-          <VoiceEngineProvider>
-            <VoiceWaveform />
-          </VoiceEngineProvider>
+          <VoiceWaveform />
         </div>
 
         {/* Tabs */}

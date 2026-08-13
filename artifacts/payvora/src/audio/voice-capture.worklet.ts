@@ -1,6 +1,9 @@
 class PayvoraVoiceCaptureProcessor extends AudioWorkletProcessor {
   // Simple VAD parameters
   static get parameterDescriptors() { return []; }
+  private _vadState: 'silence' | 'speech';
+  private _silenceStart: number;
+  private _threshold: number;
 
   constructor() {
     super();
@@ -9,7 +12,7 @@ class PayvoraVoiceCaptureProcessor extends AudioWorkletProcessor {
     this._threshold = 0.01; // configurable threshold
   }
 
-  process(inputs/*, outputs, parameters */) {
+  process(inputs: Float32Array[][]/*, outputs, parameters */) {
     try {
       const input = inputs[0];
       if (!input || input.length === 0) return true;

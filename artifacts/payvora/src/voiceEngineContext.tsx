@@ -8,12 +8,9 @@ export function VoiceEngineProvider({ children }: { children: React.ReactNode })
   const engine = useVoiceEngineInternal()
 
   // cleanup when provider unmounts
-  React.useEffect(() => {
-    return () => {
-      try { engine.endVoiceSession() } catch {}
-      try { engine.disconnect() } catch {}
-    }
-  }, [engine])
+  React.useEffect(() => () => {
+    void engine.endVoiceSession()
+  }, [])
 
   return <VoiceEngineContext.Provider value={engine}>{children}</VoiceEngineContext.Provider>
 }

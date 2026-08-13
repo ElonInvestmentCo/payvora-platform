@@ -93,11 +93,11 @@ export async function attachRealtimeWsServer(server: HttpServer) {
       return
     }
 
-    ws.on('message', async (data: any) => {
+    ws.on('message', async (data: any, isBinary: boolean) => {
       try {
-        if (typeof data === 'string') {
+        if (!isBinary) {
           let payload: RealtimeClientMessage
-          try { payload = JSON.parse(data) as RealtimeClientMessage } catch (err) { sendJson({ type: 'error', message: 'Malformed JSON' }); return }
+          try { payload = JSON.parse(data.toString()) as RealtimeClientMessage } catch (err) { sendJson({ type: 'error', message: 'Malformed JSON' }); return }
           switch (payload.type) {
             case 'session.start': {
               try {
@@ -138,7 +138,7 @@ export async function attachRealtimeWsServer(server: HttpServer) {
           if (!sessionId) { sendJson({ type: 'error', message: 'No active session' }); return }
           let buf: Buffer
           if (data instanceof Buffer) buf = data
-          else if (ArrayBuffer.isView(data)) buf = Buffer.from((data as any).buffer)
+          else if (ArrayBuffer.isView(data)) buf = Buffer.from((data as any).buffer, (data as any).byteOffset, (data as any).byteLength)
           else buf = Buffer.from(data as ArrayBuffer)
           try {
             await engine.sendAudio(sessionId, buf)

@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 // Realtime-focused UI-independent voice engine hook.
-// Implements a real streaming transport (WebSocket) and audio analysis nodes
-// for waveform visualization. This file intentionally removes legacy
-// MediaRecorder-based upload APIs and exposes a clean, strongly-typed
-// realtime API for the frontend to consume.
+// Implements the authoritative WebSocket, AudioWorklet, PCM16 transport, and
+// analyser nodes used by both Voice Studio and the home composer.
 
 export type VoiceConnectionState =
   | 'idle'
@@ -47,8 +45,6 @@ export type UseVoiceEngineResult = {
   reset: () => void
 }
 
-// Client-side hook that records audio, POSTs it to /voice/transcribe,
-// and returns transcription. This keeps provider details server-side.
 // Internal hook implementation. Consumers should use the context-backed hook
 // exported from src/voiceEngineContext.tsx which provides a single authoritative
 // engine instance. This function implements the actual engine logic and is
@@ -59,15 +55,11 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
   // using WebSocket and the Web Audio API. If the server lacks a realtime
   // provider, the server will return a clear configuration error.
 
-  // NOTE: This implementation uses ScriptProcessorNode for capture as an
-  // AudioWorklet fallback for older browsers. It streams raw PCM16 frames
-  // to the server over WebSocket. The server is responsible for forwarding
-  // frames to a configured realtime provider.
-
   const [state, setState] = useState<VoiceConnectionState>('idle')
   const [error, setError] = useState<string | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
+  const connectionPromiseRef = useRef<Promise<void> | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const inputAnalyserRef = useRef<AnalyserNode | null>(null)
   const outputAnalyserRef = useRef<AnalyserNode | null>(null)
@@ -131,9 +123,7 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
         setState('error')
         break
       case 'session.created':
-              // Session created on the server — the client will transition to
-              // requesting_permission / listening when startVoiceSession is invoked.
-              break
+        break
       case 'speech.partial':
         setPartialTranscript(payload.text ?? '')
         break
@@ -150,7 +140,7 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
         setIsSpeaking(false)
         setState('listening')
         break
-      case 'audio.output':
+      case 'response.audio':
         if (payload.data) playRemoteAudioBase64(payload.data)
         break
       default:
@@ -169,6 +159,7 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
       const src = audioCtx.createBufferSource()
       src.buffer = audioBuffer
       const analyser = getOutputAnalyser()
+       if (!analyser) return
       src.connect(analyser)
       analyser.connect(audioCtx.destination)
       src.start()
@@ -179,56 +170,89 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
   }
 
   async function connect() {
-    if (wsRef.current) return
-    setState('connecting')
-        setError(null)
+    if (connectionPromiseRef.current) return connectionPromiseRef.current
+    if (wsRef.current?.readyState === WebSocket.OPEN) return
 
+    setState('connecting')
+    setError(null)
     const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const url = `${wsProtocol}://${window.location.host}/api/realtime/voice`
-    const ws = new WebSocket(url)
-    ws.binaryType = 'arraybuffer'
-    wsRef.current = ws
+    const promise = new Promise<void>((resolve, reject) => {
+      const ws = new WebSocket(url)
+      let settled = false
+      ws.binaryType = 'arraybuffer'
+      wsRef.current = ws
 
-    ws.addEventListener('open', () => {
-          // WebSocket opened; mark connection flag. The high-level voice state
-          // is controlled by session lifecycle and user actions (startVoiceSession).
-          setIsConnected(true)
-        })
-
-    ws.addEventListener('message', (ev) => {
-      try {
-        if (typeof ev.data === 'string') {
-          const payload = JSON.parse(ev.data)
-          handleServerMessage(payload)
-          return
-        }
-        // binary frames may be reserved for provider-specific audio in future
-      } catch (err) {
-        console.warn('Failed to parse realtime message', err)
+      const fail = (error: Error) => {
+        if (settled) return
+        settled = true
+        reject(error)
       }
-    })
 
-    ws.addEventListener('close', () => {
-      wsRef.current = null
-      setIsConnected(false)
-      // do not invent transport-specific states; leave high-level voice state
-      // to session lifecycle. If desired, map to 'idle'.
-      if (state !== 'idle') setState('idle')
-    })
+      ws.addEventListener('open', () => {
+        setIsConnected(true)
+        try {
+          ws.send(JSON.stringify({ type: 'session.start' }))
+        } catch (error) {
+          fail(error instanceof Error ? error : new Error('Could not start realtime voice session.'))
+        }
+      })
 
-    ws.addEventListener('error', () => {
-      setError('Realtime connection error')
-      setState('error')
-      try { ws.close() } catch {}
+      ws.addEventListener('message', (ev) => {
+        try {
+          if (typeof ev.data !== 'string') return
+          const payload = JSON.parse(ev.data)
+          if (payload?.type === 'error') {
+            handleServerMessage(payload)
+            fail(new Error(payload.message ?? 'Realtime provider error'))
+            return
+          }
+          if (payload?.type === 'session.created') {
+            handleServerMessage(payload)
+            if (!settled) {
+              settled = true
+              resolve()
+            }
+            return
+          }
+          handleServerMessage(payload)
+        } catch (error) {
+          console.warn('Failed to parse realtime message', error)
+        }
+      })
+
+      ws.addEventListener('close', () => {
+        wsRef.current = null
+        setIsConnected(false)
+        if (!settled) fail(new Error('Realtime voice connection closed before the session started.'))
+        setState(current => current === 'error' ? current : 'idle')
+      })
+
+      ws.addEventListener('error', () => {
+        const error = new Error('Realtime connection error')
+        setError(error.message)
+        setState('error')
+        fail(error)
+        try { ws.close() } catch {}
+      })
     })
+    connectionPromiseRef.current = promise
+    try {
+      await promise
+    } finally {
+      if (connectionPromiseRef.current === promise) connectionPromiseRef.current = null
+    }
   }
 
   async function startVoiceSession() {
-    if (!wsRef.current) await connect()
+    setError(null)
     setState('requesting_permission')
+    setPartialTranscript('')
+    setFinalTranscript('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
       localStreamRef.current = stream
+      if (!wsRef.current) await connect()
       const audioCtx = ensureAudioContext()
       const source = audioCtx.createMediaStreamSource(stream)
       sourceRef.current = source
@@ -268,16 +292,14 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
           }
         }
       } catch (err) {
-        // If AudioWorklet cannot be loaded, surface a clear error — do not silently fall back to MediaRecorder.
-        setError('AudioWorklet unavailable or failed to load. Realtime voice requires AudioWorklet support.')
-        setState('error')
-        throw err
+        throw new Error('AudioWorklet unavailable or failed to load. Realtime voice requires AudioWorklet support.')
       }
 
       setState('listening')
       setIsConnected(true)
     } catch (err) {
-      setError((err as Error).message)
+      try { await endVoiceSession() } catch {}
+      setError(err instanceof Error ? err.message : 'Realtime voice session failed.')
       setState('error')
       throw err
     }
@@ -291,6 +313,8 @@ export function useVoiceEngineInternal(): UseVoiceEngineResult {
     workletNodeRef.current = null
     processorRef.current = null
     sourceRef.current = null
+    inputAnalyserRef.current = null
+    outputAnalyserRef.current = null
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop())
       localStreamRef.current = null

@@ -10,7 +10,7 @@ let wss: any
 
 beforeEach(async () => {
   server = createServer((req, res) => { res.statusCode = 404; res.end() })
-  wss = attachRealtimeWsServer(server)
+  wss = await attachRealtimeWsServer(server)
   await new Promise<void>((resolve) => { server.listen(0, () => { port = (server.address() as any).port; resolve() }) })
 })
 

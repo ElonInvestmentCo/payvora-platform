@@ -7,3 +7,4 @@
 - [Monorepo typecheck order](monorepo-typecheck.md) — run `pnpm exec tsc -b lib/db` before api-server typechecks; db package has no build script.
 - [Payvora AI provider tests](payvora-ai-provider-tests.md) — keep provider loading lazy so canonical prompt tests run offline without an OpenAI integration.
 - [Payvora clean preview setup](payvora-preview-setup.md) — imported checkouts need locked dependencies and a development schema before API-backed preview checks.
+- [Payvora realtime preview prerequisites](payvora-realtime-preview.md) — composer realtime needs a real server provider; F5-TTS batch transcription is not a WebSocket provider.
