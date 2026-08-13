@@ -252,7 +252,6 @@ router.post("/audio/transcribe", async (req, res) => {
 });
 
 // New route supporting multipart/form-data as well as raw audio uploads.
-import Busboy from 'busboy';
 
 router.post('/voice/transcribe', async (req, res) => {
   const contentType = String(req.headers['content-type'] ?? '');
@@ -262,12 +261,12 @@ router.post('/voice/transcribe', async (req, res) => {
 
     if (contentType.startsWith('multipart/form-data')) {
       // Parse multipart with Busboy and collect the "file" field into memory
-      const bb = new Busboy({ headers: req.headers, limits: { fileSize: MAX_BYTES } });
+      const bb = Busboy({ headers: req.headers, limits: { fileSize: MAX_BYTES } });
       let finished = false;
       let aborted = false;
       buffer = null;
       await new Promise<void>((resolve, reject) => {
-        bb.on('file', (_fieldname, stream, filename, encoding, mimetype) => {
+        bb.on('file', (fieldname: string, stream: import('stream').Readable & { truncated?: boolean }, info) => {
           const chunks: Buffer[] = [];
           let total = 0;
           stream.on('data', (chunk: Buffer) => {
@@ -284,7 +283,7 @@ router.post('/voice/transcribe', async (req, res) => {
             buffer = Buffer.concat(chunks);
           });
         });
-        bb.on('error', err => { aborted = true; reject(err); });
+                bb.on('error', (err: Error) => { aborted = true; reject(err); });
         bb.on('finish', () => { finished = true; resolve(); });
         req.pipe(bb);
       });

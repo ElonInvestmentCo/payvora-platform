@@ -100,11 +100,11 @@ export class VoiceEngineService extends EventEmitter {
           if (provId !== providerSessionId) return
           this.emit('speech.final', id, text)
         }
-        const onResponseStarted = (provId: string) => { if (provId !== providerSessionId) return this.emit('response.started', id) }
-        const onResponseTextDelta = (provId: string, delta: string) => { if (provId !== providerSessionId) return this.emit('response.text.delta', id, delta) }
-        const onResponseTextCompleted = (provId: string, text: string) => { if (provId !== providerSessionId) return this.emit('response.text.completed', id, text) }
-        const onResponseAudio = (provId: string, audio: Buffer) => { if (provId !== providerSessionId) return this.emit('response.audio', id, audio) }
-        const onResponseEnded = (provId: string) => { if (provId !== providerSessionId) return this.emit('response.ended', id) }
+        const onResponseStarted = (provId: string): void => { if (provId !== providerSessionId) return; this.emit('response.started', id); }
+        const onResponseTextDelta = (provId: string, delta: string): void => { if (provId !== providerSessionId) return; this.emit('response.text.delta', id, delta); }
+        const onResponseTextCompleted = (provId: string, text: string): void => { if (provId !== providerSessionId) return; this.emit('response.text.completed', id, text); }
+        const onResponseAudio = (provId: string, audio: Buffer): void => { if (provId !== providerSessionId) return; this.emit('response.audio', id, audio); }
+        const onResponseEnded = (provId: string): void => { if (provId !== providerSessionId) return; this.emit('response.ended', id); }
 
         providerAny.on('speech.partial', onPartial)
         providerAny.on('speech.final', onFinal)
