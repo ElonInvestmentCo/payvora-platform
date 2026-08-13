@@ -11,6 +11,7 @@ import VoiceWaveform from './VoiceWaveform'
 import { useVoiceEngine } from './voiceEngineContext'
 
 type SidebarConversation = { id: number; title: string; createdAt: string }
+type ComposerAttachment = { id: string; file: File; previewUrl?: string }
 
 // React 18 has no `inert` prop; set the DOM property via a callback ref.
 const inertWhen = (inert: boolean) => (el: HTMLElement | null) => { if (el) el.inert = inert }
@@ -501,6 +502,16 @@ type CodexHomeProps = {
 function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onPrompt, onUnavailable }: CodexHomeProps) {
   const engine = useVoiceEngine()
   const seenTranscriptRef = useRef('')
+  const attachmentMenuRef = useRef<HTMLDivElement>(null)
+  const fileInputRefs = {
+    files: useRef<HTMLInputElement>(null),
+    images: useRef<HTMLInputElement>(null),
+    audio: useRef<HTMLInputElement>(null),
+  }
+  const attachmentIdRef = useRef(0)
+  const attachmentUrlsRef = useRef<ComposerAttachment[]>([])
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false)
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([])
   const prompts = [
     { label: 'Explore and\nunderstand code', prompt: 'Help me explore and understand this project.', tone: 'blue', icon: <GlobeIcon /> },
     { label: 'Build a new feature,\napp, or tool', prompt: 'Help me build a new feature for PAYVORA.', tone: 'purple', icon: <PencilIcon /> },
@@ -517,6 +528,32 @@ function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onProm
     || engine.isListening
     || engine.isThinking
     || engine.isSpeaking
+
+  useEffect(() => {
+    attachmentUrlsRef.current = attachments
+  }, [attachments])
+
+  useEffect(() => () => {
+    attachmentUrlsRef.current.forEach(attachment => {
+      if (attachment.previewUrl) URL.revokeObjectURL(attachment.previewUrl)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!attachmentMenuOpen) return
+    const closeMenu = (event: PointerEvent) => {
+      if (!attachmentMenuRef.current?.contains(event.target as Node)) setAttachmentMenuOpen(false)
+    }
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAttachmentMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', closeMenu)
+    document.addEventListener('keydown', closeWithEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeMenu)
+      document.removeEventListener('keydown', closeWithEscape)
+    }
+  }, [attachmentMenuOpen])
 
   useEffect(() => {
     const transcript = engine.finalTranscript.trim()
@@ -550,6 +587,32 @@ function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onProm
     }
   }
 
+  const addFiles = (fileList: FileList | null) => {
+    if (!fileList?.length) return
+    const selected = Array.from(fileList).map(file => {
+      const id = `${file.name}-${file.size}-${file.lastModified}-${attachmentIdRef.current++}`
+      return {
+        id,
+        file,
+        previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      }
+    })
+    setAttachments(current => [...current, ...selected])
+    setAttachmentMenuOpen(false)
+  }
+
+  const removeAttachment = (id: string) => {
+    setAttachments(current => {
+      const attachment = current.find(item => item.id === id)
+      if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl)
+      return current.filter(item => item.id !== id)
+    })
+  }
+  const choosePicker = (picker: React.RefObject<HTMLInputElement | null>) => {
+    setAttachmentMenuOpen(false)
+    window.requestAnimationFrame(() => picker.current?.click())
+  }
+
   return (
     <section className="pv-codex-home" aria-label="New PAYVORA chat">
       <div className="pv-codex-hero">
@@ -571,6 +634,21 @@ function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onProm
           <span>Choose project</span>
         </button>
         <div className="pv-codex-composer">
+          {attachments.length > 0 && (
+            <div aria-label="Selected attachments" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 18px 0' }}>
+              {attachments.map(attachment => (
+                <div key={attachment.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, maxWidth: '100%', padding: 6, border: '1px solid var(--pv-border)', borderRadius: 12, background: 'var(--pv-card-raised)', color: 'var(--pv-text)' }}>
+                  {attachment.previewUrl ? (
+                    <img src={attachment.previewUrl} alt="" style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                  ) : (
+                    <span aria-hidden style={{ width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 8, background: 'var(--pv-hover)', color: 'var(--pv-text-secondary)', fontSize: 16 }}>↗</span>
+                  )}
+                  <span title={attachment.file.name} style={{ minWidth: 0, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 }}>{attachment.file.name}</span>
+                  <button type="button" aria-label={`Remove ${attachment.file.name}`} onClick={() => removeAttachment(attachment.id)} style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', flexShrink: 0, border: 0, borderRadius: 12, background: 'transparent', color: 'var(--pv-text-secondary)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
           <textarea
             ref={messageInputRef}
             value={message}
@@ -582,9 +660,21 @@ function CodexHome({ message, messageInputRef, onMessageChange, onSubmit, onProm
           />
           <VoiceWaveform variant="composer" />
           <div className="pv-codex-composer-controls">
-            <button type="button" className="pv-codex-control-icon" aria-label="Add attachment" onClick={() => onUnavailable('Attachments are not available yet.')}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>
-            </button>
+            <div ref={attachmentMenuRef} style={{ position: 'relative' }}>
+              <button type="button" className="pv-codex-control-icon" aria-label="Add attachment" aria-haspopup="menu" aria-expanded={attachmentMenuOpen} onClick={() => setAttachmentMenuOpen(current => !current)}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>
+              </button>
+              {attachmentMenuOpen && (
+                <div role="menu" aria-label="Attachment options" style={{ position: 'absolute', left: 0, bottom: 45, zIndex: 40, width: 190, padding: 6, border: '1px solid var(--pv-border)', borderRadius: 16, background: 'var(--pv-card)', boxShadow: '0 16px 44px rgba(0,0,0,0.22)', animation: 'payvora-menu-in 220ms cubic-bezier(0.32,0.72,0,1)' }}>
+                  <AttachmentOption label="Upload files" hint="Any file type" onClick={() => choosePicker(fileInputRefs.files)} icon={<FileIcon />} />
+                  <AttachmentOption label="Add images" hint="PNG, JPG, and more" onClick={() => choosePicker(fileInputRefs.images)} icon={<ImageIcon />} />
+                  <AttachmentOption label="Add audio" hint="Audio recordings" onClick={() => choosePicker(fileInputRefs.audio)} icon={<AudioIcon />} />
+                </div>
+              )}
+              <input ref={fileInputRefs.files} type="file" multiple hidden onChange={event => { addFiles(event.target.files); event.currentTarget.value = '' }} />
+              <input ref={fileInputRefs.images} type="file" accept="image/*" multiple hidden onChange={event => { addFiles(event.target.files); event.currentTarget.value = '' }} />
+              <input ref={fileInputRefs.audio} type="file" accept="audio/*" multiple hidden onChange={event => { addFiles(event.target.files); event.currentTarget.value = '' }} />
+            </div>
             <button type="button" className="pv-codex-access-control" onClick={() => onUnavailable('Workspace access is not available yet.')}>
               <ShieldIcon />
               <span>Full access</span>
@@ -655,6 +745,33 @@ function ActionRow({ icon, label, onClick, muted, title }: { icon: React.ReactNo
       {muted && <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--pv-text-muted)' }}>Not available yet</span>}
     </button>
   )
+}
+
+function AttachmentOption({ label, hint, icon, onClick }: { label: string; hint: string; icon: React.ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" role="menuitem" onClick={onClick}
+      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 0, borderRadius: 11, background: 'transparent', color: 'var(--pv-text)', cursor: 'pointer', textAlign: 'left' }}
+      onMouseEnter={event => { event.currentTarget.style.background = 'var(--pv-hover)' }}
+      onMouseLeave={event => { event.currentTarget.style.background = 'transparent' }}>
+      <span aria-hidden style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', borderRadius: 9, background: 'var(--pv-hover)', color: 'var(--pv-text-secondary)', flexShrink: 0 }}>{icon}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>{label}</span>
+        <span style={{ display: 'block', marginTop: 2, color: 'var(--pv-text-muted)', fontSize: 11 }}>{hint}</span>
+      </span>
+    </button>
+  )
+}
+
+function FileIcon() {
+  return <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 2.8h6l4 4V17H5V2.8Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M11 2.8v4h4M7.5 10h5M7.5 13h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+}
+
+function ImageIcon() {
+  return <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="2.8" y="3.5" width="14.4" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/><circle cx="7" cy="7.5" r="1.2" stroke="currentColor" strokeWidth="1.3"/><path d="m4.5 14 3.4-3.4 2.5 2.4 1.8-1.7 3.3 3.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+}
+
+function AudioIcon() {
+  return <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="7" y="2.5" width="6" height="10" rx="3" stroke="currentColor" strokeWidth="1.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5M7.5 17.5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
 }
 
 const menuItem: React.CSSProperties = {
