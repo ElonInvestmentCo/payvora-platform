@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import React, { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 export const vars = {
   page: "var(--pv-page)",
@@ -139,9 +140,11 @@ export function SuccessBanner({ message }: { message: string | null }) {
 }
 
 export function Modal({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div onClick={onClose} style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         width: "100%", maxWidth: 520, maxHeight: "88vh", overflowY: "auto", background: vars.card, borderRadius: 20,
@@ -153,6 +156,7 @@ export function Modal({ title, children, onClose }: { title: string; children: R
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
